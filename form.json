@@ -1,14 +1,9 @@
 {
-  "questions": [
-    {
-      "type": "control_textbox",
-      "text": "Ad Soyad",
-      "name": "adSoyad"
-    },
-    {
-      "type": "control_email",
-      "text": "E-posta",
-      "name": "eposta"
-    }
-  ]
+  "id": "260906084470962",
+  "properties": null,
+  "questions": null,
+  "title": "Test Form",
+  "url": "https://form.jotform.com/260906084470962",
+  "username": "zybo",
+  "created_at": "2024-06-17T12:34:56Z"
 }

@@ -12,9 +12,11 @@ import (
 var cfgFile string
 
 var rootCmd = &cobra.Command{
-	Use:   "jotform",
-	Short: "AI-native data collection at the terminal",
-	Long:  "Manage Jotform forms, stream submissions, and generate schemas with AI — directly from the terminal or CI/CD pipelines.",
+	Use:           "jotform",
+	Short:         "AI-native data collection at the terminal",
+	Long:          "Manage Jotform forms, stream submissions, and generate schemas with AI — directly from the terminal or CI/CD pipelines.",
+	SilenceErrors: true,
+	SilenceUsage:  true,
 }
 
 func Execute() {

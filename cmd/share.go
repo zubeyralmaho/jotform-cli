@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	qrcode "github.com/skip2/go-qrcode"
 	"github.com/zubeyralmaho/jotform-cli/internal/api"
 	"github.com/zubeyralmaho/jotform-cli/internal/config"
 	"github.com/zubeyralmaho/jotform-cli/internal/ui"
@@ -84,119 +85,49 @@ func runShare(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// renderQR generates a text-based QR code using block characters.
-// Uses a simple bit-matrix approach: each module is a pair of half-blocks.
+// renderQR generates a real QR code matrix and renders it with block characters.
 func renderQR(url string) string {
-	matrix := generateQRMatrix(url)
-	if matrix == nil {
+	code, err := qrcode.New(url, qrcode.Medium)
+	if err != nil {
 		// Fallback: just display the URL in a box if QR generation fails
 		return ui.Muted.Render("  (QR code not available)\n  ") + ui.Value.Render(url)
 	}
 
+	matrix := code.Bitmap()
+	if len(matrix) == 0 {
+		return ui.Muted.Render("  (QR code not available)\n  ") + ui.Value.Render(url)
+	}
+
 	var sb strings.Builder
-	// Top quiet zone
-	sb.WriteString(strings.Repeat("██", len(matrix[0])+2) + "\n")
+	quietZone := 2
+	rowWidth := len(matrix[0]) + (quietZone * 2)
+
+	// Top quiet zone.
+	for i := 0; i < quietZone; i++ {
+		sb.WriteString(strings.Repeat("  ", rowWidth) + "\n")
+	}
 
 	for _, row := range matrix {
-		sb.WriteString("██") // left quiet zone
+		sb.WriteString(strings.Repeat("  ", quietZone)) // left quiet zone
 		for _, mod := range row {
 			if mod {
-				sb.WriteString("  ") // dark module → blank (inverted for terminal)
+				sb.WriteString("██") // dark module
 			} else {
-				sb.WriteString("██") // light module → block
+				sb.WriteString("  ") // light module
 			}
 		}
-		sb.WriteString("██\n") // right quiet zone
+		sb.WriteString(strings.Repeat("  ", quietZone) + "\n") // right quiet zone
 	}
 
-	// Bottom quiet zone
-	sb.WriteString(strings.Repeat("██", len(matrix[0])+2))
+	// Bottom quiet zone.
+	for i := 0; i < quietZone; i++ {
+		sb.WriteString(strings.Repeat("  ", rowWidth))
+		if i < quietZone-1 {
+			sb.WriteString("\n")
+		}
+	}
+
 	return sb.String()
-}
-
-// generateQRMatrix creates a simplified QR-like bit matrix for the given URL.
-// This is a visual approximation using a deterministic pattern — not a full
-// QR spec implementation. For a real QR, integrate go-qrcode or similar.
-func generateQRMatrix(data string) [][]bool {
-	size := 21 // QR version 1 is 21×21
-	matrix := make([][]bool, size)
-	for i := range matrix {
-		matrix[i] = make([]bool, size)
-	}
-
-	// Draw finder patterns (top-left, top-right, bottom-left)
-	drawFinder(matrix, 0, 0)
-	drawFinder(matrix, 0, size-7)
-	drawFinder(matrix, size-7, 0)
-
-	// Add timing patterns
-	for i := 8; i < size-8; i++ {
-		matrix[6][i] = i%2 == 0
-		matrix[i][6] = i%2 == 0
-	}
-
-	// Encode data into remaining modules using a simple hash approach
-	bytes := []byte(data)
-	moduleIdx := 0
-	for row := size - 1; row >= 0; row -= 2 {
-		if row == 6 {
-			row-- // skip timing column
-		}
-		for col := size - 1; col >= 0; col-- {
-			for _, dc := range []int{0, -1} {
-				c := col + dc
-				if c < 0 || c >= size {
-					continue
-				}
-				// Skip finder and timing areas
-				if isReserved(matrix, row, c) {
-					continue
-				}
-				if moduleIdx < len(bytes)*8 {
-					byteIdx := moduleIdx / 8
-					bitIdx := 7 - (moduleIdx % 8)
-					matrix[row][c] = (bytes[byteIdx]>>uint(bitIdx))&1 == 1
-					moduleIdx++
-				}
-			}
-		}
-	}
-
-	return matrix
-}
-
-func drawFinder(matrix [][]bool, row, col int) {
-	pattern := [][]bool{
-		{true, true, true, true, true, true, true},
-		{true, false, false, false, false, false, true},
-		{true, false, true, true, true, false, true},
-		{true, false, true, true, true, false, true},
-		{true, false, true, true, true, false, true},
-		{true, false, false, false, false, false, true},
-		{true, true, true, true, true, true, true},
-	}
-	for r, rowPat := range pattern {
-		for c, v := range rowPat {
-			if row+r < len(matrix) && col+c < len(matrix[0]) {
-				matrix[row+r][col+c] = v
-			}
-		}
-	}
-}
-
-func isReserved(matrix [][]bool, row, col int) bool {
-	size := len(matrix)
-	// Finder patterns + separators (top-left, top-right, bottom-left)
-	if (row < 9 && col < 9) || // top-left
-		(row < 9 && col >= size-8) || // top-right
-		(row >= size-8 && col < 9) { // bottom-left
-		return true
-	}
-	// Timing patterns
-	if row == 6 || col == 6 {
-		return true
-	}
-	return false
 }
 
 func init() {

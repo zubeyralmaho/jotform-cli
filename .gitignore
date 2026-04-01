@@ -1,6 +1,7 @@
 jotform
 jotform-cli
 jotform-test
+jotform-new
 *.exe
 dist/
 coverage.out

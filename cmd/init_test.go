@@ -8,6 +8,38 @@ import (
 	"github.com/zubeyralmaho/jotform-cli/internal/config"
 )
 
+func TestStarterFormSchema(t *testing.T) {
+	schema := starterFormSchema("Contact Us")
+
+	questions, ok := schema["questions"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected questions map in starter schema")
+	}
+
+	if len(questions) < 4 {
+		t.Fatalf("expected starter schema to include visible fields, got %d questions", len(questions))
+	}
+
+	first, ok := questions["1"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected question 1 to be a map")
+	}
+	if first["type"] != "control_head" {
+		t.Fatalf("expected first question to be control_head, got %v", first["type"])
+	}
+
+	last, ok := questions["4"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected question 4 to be a map")
+	}
+	if last["type"] != "control_button" {
+		t.Fatalf("expected last question to be control_button, got %v", last["type"])
+	}
+	if last["text"] != "Submit" {
+		t.Fatalf("expected submit button text, got %v", last["text"])
+	}
+}
+
 // TestInitExistingFormLogic tests the core logic of initExistingForm
 // This is a basic smoke test to verify the function structure
 func TestInitExistingFormLogic(t *testing.T) {

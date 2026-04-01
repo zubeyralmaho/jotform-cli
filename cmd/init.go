@@ -183,14 +183,10 @@ func initNewForm(formTitle, schemaFile string) error {
 		return err
 	}
 
-	// Create new form with minimal schema
-	minimalSchema := map[string]interface{}{
-		"properties": map[string]interface{}{
-			"title": formTitle,
-		},
-	}
+	// Create new form with a starter schema so the page is not empty.
+	starterSchema := starterFormSchema(formTitle)
 
-	form, err := client.CreateForm(minimalSchema)
+	form, err := client.CreateForm(starterSchema)
 	if err != nil {
 		return fmt.Errorf("failed to create form: %w", err)
 	}
@@ -234,6 +230,40 @@ func initNewForm(formTitle, schemaFile string) error {
 	printInitHints()
 
 	return nil
+}
+
+func starterFormSchema(formTitle string) map[string]interface{} {
+	return map[string]interface{}{
+		"questions": map[string]interface{}{
+			"1": map[string]interface{}{
+				"type":  "control_head",
+				"text":  formTitle,
+				"order": "1",
+			},
+			"2": map[string]interface{}{
+				"type":     "control_textbox",
+				"text":     "Name",
+				"name":     "name",
+				"order":    "2",
+				"required": "No",
+			},
+			"3": map[string]interface{}{
+				"type":     "control_email",
+				"text":     "Email",
+				"name":     "email",
+				"order":    "3",
+				"required": "No",
+			},
+			"4": map[string]interface{}{
+				"type":  "control_button",
+				"text":  "Submit",
+				"order": "4",
+			},
+		},
+		"properties": map[string]interface{}{
+			"title": formTitle,
+		},
+	}
 }
 
 func printInitHints() {

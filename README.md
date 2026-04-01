@@ -6,6 +6,15 @@
 
 Form-as-Code CLI for creating, managing, and inspecting Jotform forms from the terminal.
 
+## Why It Exists
+
+Jotform CLI is built first as a tool surface for AI agents.
+
+- Give AI agents a reliable, scriptable way to work with Jotform
+- Enable universal agentic workflows across terminal, CI/CD, and MCP hosts
+- Keep humans and agents on the same command surface with the same outputs
+- Turn forms into something that can be created, inspected, diffed, and deployed like code
+
 ## What It Does
 
 - Manage authentication with system keychain or `--api-key`
