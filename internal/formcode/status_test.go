@@ -516,6 +516,9 @@ func TestComputeStatus_RemoteTimestamp(t *testing.T) {
 					"type": "control_textbox",
 				},
 			},
+			Properties: map[string]interface{}{
+				"updated_at": expectedTime,
+			},
 		},
 	}
 

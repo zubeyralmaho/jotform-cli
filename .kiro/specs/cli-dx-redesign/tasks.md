@@ -74,7 +74,7 @@ This plan implements the remaining components of the Jotform CLI DX Redesign fea
 - [x] 3. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [-] 4. Implement jotform status command
+- [x] 4. Implement jotform status command
   - [x] 4.1 Create StatusReport data model and change detection
     - Define StatusReport struct with all required fields
     - Define Change struct with type, path, old/new values
@@ -89,7 +89,7 @@ This plan implements the remaining components of the Jotform CLI DX Redesign fea
     - Use JSON path notation for changed fields
     - _Requirements: 5.4, 5.5, 5.6_
   
-  - [-] 4.3 Implement status display and output formatting
+  - [x] 4.3 Implement status display and output formatting
     - Display form ID and name
     - Display local and remote modification times
     - Display all changes with type indicators
@@ -115,7 +115,7 @@ This plan implements the remaining components of the Jotform CLI DX Redesign fea
     - Test --summary flag output
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9_
 
-- [ ] 5. Implement jotform open command
+- [-] 5. Implement jotform open command
   - [ ] 5.1 Create open command with form ID resolution
     - Resolve form ID from args or project context
     - Construct Jotform form URL
