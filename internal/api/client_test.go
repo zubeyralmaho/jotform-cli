@@ -86,7 +86,7 @@ func TestGetForm_Success(t *testing.T) {
 			seenBase = true
 			_ = json.NewEncoder(w).Encode(apiResponse[FormProperties]{
 				ResponseCode: 200,
-				Content: FormProperties{ID: "123", Title: "My Form"},
+				Content:      FormProperties{ID: "123", Title: "My Form"},
 			})
 		case "/form/123/questions":
 			seenQuestions = true
@@ -100,7 +100,7 @@ func TestGetForm_Success(t *testing.T) {
 			seenProperties = true
 			_ = json.NewEncoder(w).Encode(apiResponse[map[string]interface{}]{
 				ResponseCode: 200,
-				Content: map[string]interface{}{"title": "My Form"},
+				Content:      map[string]interface{}{"title": "My Form"},
 			})
 		default:
 			w.WriteHeader(http.StatusNotFound)
