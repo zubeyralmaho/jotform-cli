@@ -71,6 +71,26 @@ jotform ls --output json
 jotform get 242753193847060 --output yaml
 ```
 
+## Screenshots
+
+### Init Command
+
+<p align="center">
+  <img src="assets/jotform-init-command.png" alt="jotform init command" width="1100" />
+</p>
+
+### Dashboard Command
+
+<p align="center">
+  <img src="assets/jotform-dashboard-command.png" alt="jotform dashboard command" width="1100" />
+</p>
+
+### Share Command
+
+<p align="center">
+  <img src="assets/jotform-share-command.png" alt="jotform share command" width="1100" />
+</p>
+
 ## Command Overview
 
 ### Core
