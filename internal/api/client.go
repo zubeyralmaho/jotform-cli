@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -47,7 +48,14 @@ func (c *Client) get(path string, out any) error {
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		return fmt.Errorf("invalid API key — run `jotform auth login`")
+		body, _ := io.ReadAll(resp.Body)
+		if strings.HasPrefix(path, "/user") {
+			return fmt.Errorf("invalid API key — run `jotform auth login`")
+		}
+		if len(body) > 0 {
+			return fmt.Errorf("API error 401: unauthorized resource access. Details: %s", string(body))
+		}
+		return fmt.Errorf("API error 401: unauthorized resource access")
 	}
 	if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)

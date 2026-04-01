@@ -44,6 +44,19 @@ func TestGetUser_Unauthorized(t *testing.T) {
 	assert.Contains(t, err.Error(), "invalid API key")
 }
 
+func TestGetForm_UnauthorizedResource(t *testing.T) {
+	_, client := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Contains(t, r.URL.Path, "/form/")
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte(`{"responseCode":401,"message":"Unauthorized"}`))
+	})
+
+	_, err := client.GetForm("123")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unauthorized resource access")
+	assert.NotContains(t, err.Error(), "invalid API key")
+}
+
 func TestListForms_Success(t *testing.T) {
 	_, client := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Contains(t, r.URL.Path, "/user/forms")
