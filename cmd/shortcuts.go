@@ -85,6 +85,13 @@ var shortDiffCmd = &cobra.Command{
 	RunE:  runFormsDiff,
 }
 
+var shortStatusCmd = &cobra.Command{
+	Use:   "status [form-id]",
+	Short: "Show differences between local and remote form (shortcut for: forms status)",
+	Args:  cobra.MaximumNArgs(1),
+	RunE:  runFormsStatus,
+}
+
 // ── Submissions shortcut ────────────────────────────────────────────────
 
 var shortWatchCmd = &cobra.Command{
@@ -126,6 +133,10 @@ func init() {
 	// diff shortcuts
 	shortDiffCmd.Flags().String("file", "", "Path to local form file to compare")
 
+	// status shortcuts
+	shortStatusCmd.Flags().String("file", "", "Path to local form file to compare")
+	shortStatusCmd.Flags().Bool("summary", false, "Show only change counts without details")
+
 	// watch shortcuts
 	shortWatchCmd.Flags().Duration("interval", 5*1e9, "Polling interval") // 5s
 	shortWatchCmd.Flags().Bool("no-checkpoint", false, "Disable checkpoint persistence")
@@ -150,6 +161,7 @@ func init() {
 		shortPullCmd,
 		shortPushCmd,
 		shortDiffCmd,
+		shortStatusCmd,
 		shortWatchCmd,
 		shortGenerateCmd,
 	)

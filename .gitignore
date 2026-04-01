@@ -1,5 +1,14 @@
 jotform
+jotform-cli
+jotform-test
 *.exe
 dist/
 coverage.out
 .DS_Store
+
+# Local project context files should not be versioned.
+**/.jotform.yaml
+
+# Local schema file generated during CLI experimentation in cmd/.
+cmd/form.yaml
+.config.kiro

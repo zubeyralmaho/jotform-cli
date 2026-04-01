@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
+	"time"
 
+	"github.com/jotform/jotform-cli/internal/api"
 	"github.com/jotform/jotform-cli/internal/config"
 	"github.com/jotform/jotform-cli/internal/formcode"
 	"github.com/jotform/jotform-cli/internal/output"
@@ -354,6 +357,227 @@ func runFormsDiff(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+// ── STATUS ──────────────────────────────────────────────────────────────
+
+var formsStatusCmd = &cobra.Command{
+	Use:   "status [form-id]",
+	Short: "Show differences between local and remote form",
+	Long:  `Displays a summary of changes between the local schema file and the remote form, similar to git status.`,
+	Args:  cobra.MaximumNArgs(1),
+	RunE:  runFormsStatus,
+}
+
+func runFormsStatus(cmd *cobra.Command, args []string) error {
+	formID, err := config.ResolveFormID(args)
+	if err != nil {
+		return err
+	}
+
+	filePath, _ := cmd.Flags().GetString("file")
+	schemaFile, err := config.ResolveSchemaFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	client, err := newClient()
+	if err != nil {
+		return err
+	}
+
+	// Create an adapter that wraps the API client
+	adapter := &apiClientAdapter{client: client}
+	report, err := formcode.ComputeStatus(adapter, formID, schemaFile)
+	if err != nil {
+		return err
+	}
+
+	// Check for --summary flag
+	summary, _ := cmd.Flags().GetBool("summary")
+	if summary {
+		displayStatusSummary(report)
+	} else {
+		displayStatusReport(report)
+	}
+
+	return nil
+}
+
+// apiClientAdapter adapts api.Client to formcode.APIClient interface
+type apiClientAdapter struct {
+	client interface {
+		GetForm(id string) (*api.FormProperties, error)
+	}
+}
+
+func (a *apiClientAdapter) GetForm(id string) (*formcode.FormProperties, error) {
+	apiForm, err := a.client.GetForm(id)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Convert api.FormProperties to formcode.FormProperties
+	return &formcode.FormProperties{
+		ID:         apiForm.ID,
+		Title:      apiForm.Title,
+		Questions:  apiForm.Questions,
+		Properties: apiForm.Properties,
+	}, nil
+}
+
+// displayStatusReport shows the full status report with all changes
+func displayStatusReport(report *formcode.StatusReport) {
+	fmt.Printf("Form: %s (%s)\n", report.FormName, report.FormID)
+	fmt.Printf("Local schema: %s (modified %s)\n", 
+		filepath.Base(report.LocalPath), 
+		formatRelativeTime(report.LocalModified))
+	fmt.Printf("Remote: last updated %s\n\n", formatRelativeTime(report.RemoteModified))
+
+	if !report.HasChanges {
+		fmt.Println("No changes detected.")
+		return
+	}
+
+	fmt.Println("Changes:")
+	for _, change := range report.Changes {
+		displayChange(change)
+	}
+
+	fmt.Println()
+	// Suggest next actions based on timestamps
+	if report.LocalModified.After(report.RemoteModified) {
+		fmt.Println("Run 'jotform push' to apply local changes.")
+	} else {
+		fmt.Println("Run 'jotform pull' to download remote changes.")
+	}
+	fmt.Println("Run 'jotform diff' to see detailed differences.")
+}
+
+// displayStatusSummary shows only change counts
+func displayStatusSummary(report *formcode.StatusReport) {
+	if !report.HasChanges {
+		fmt.Println("No changes detected.")
+		return
+	}
+
+	added := 0
+	modified := 0
+	deleted := 0
+
+	for _, change := range report.Changes {
+		switch change.Type {
+		case formcode.ChangeAdded:
+			added++
+		case formcode.ChangeModified:
+			modified++
+		case formcode.ChangeDeleted:
+			deleted++
+		}
+	}
+
+	fmt.Printf("%d changes: %d modified, %d added, %d deleted\n", 
+		len(report.Changes), modified, added, deleted)
+}
+
+// displayChange formats a single change for display
+func displayChange(change formcode.Change) {
+	var indicator string
+	switch change.Type {
+	case formcode.ChangeAdded:
+		indicator = "+"
+	case formcode.ChangeModified:
+		indicator = "~"
+	case formcode.ChangeDeleted:
+		indicator = "-"
+	}
+
+	// Format the change based on type
+	if change.Type == formcode.ChangeModified && change.OldValue != nil && change.NewValue != nil {
+		// Show old → new for modifications
+		oldStr := formatValue(change.OldValue)
+		newStr := formatValue(change.NewValue)
+		fmt.Printf("  %s %s: %s → %s\n", indicator, change.Path, oldStr, newStr)
+	} else if change.Type == formcode.ChangeAdded {
+		// Show new value for additions
+		newStr := formatValue(change.NewValue)
+		fmt.Printf("  %s %s: %s\n", indicator, change.Path, newStr)
+	} else if change.Type == formcode.ChangeDeleted {
+		// Show old value for deletions
+		oldStr := formatValue(change.OldValue)
+		fmt.Printf("  %s %s: %s\n", indicator, change.Path, oldStr)
+	} else {
+		// Fallback to description
+		fmt.Printf("  %s %s\n", indicator, change.Description)
+	}
+}
+
+// formatValue converts an interface{} to a readable string for display
+func formatValue(val interface{}) string {
+	if val == nil {
+		return "<nil>"
+	}
+
+	switch v := val.(type) {
+	case string:
+		// Truncate long strings
+		if len(v) > 50 {
+			return fmt.Sprintf("\"%s...\"", v[:47])
+		}
+		return fmt.Sprintf("\"%s\"", v)
+	case map[string]interface{}:
+		// For objects, show a summary
+		if text, ok := v["text"].(string); ok {
+			return fmt.Sprintf("field \"%s\"", text)
+		}
+		if name, ok := v["name"].(string); ok {
+			return fmt.Sprintf("field \"%s\"", name)
+		}
+		return "object"
+	case []interface{}:
+		return fmt.Sprintf("array[%d]", len(v))
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+}
+
+// formatRelativeTime converts a timestamp to a human-readable relative time
+func formatRelativeTime(t time.Time) string {
+	duration := time.Since(t)
+	
+	if duration < time.Minute {
+		return "just now"
+	} else if duration < time.Hour {
+		minutes := int(duration.Minutes())
+		if minutes == 1 {
+			return "1 minute ago"
+		}
+		return fmt.Sprintf("%d minutes ago", minutes)
+	} else if duration < 24*time.Hour {
+		hours := int(duration.Hours())
+		if hours == 1 {
+			return "1 hour ago"
+		}
+		return fmt.Sprintf("%d hours ago", hours)
+	} else if duration < 7*24*time.Hour {
+		days := int(duration.Hours() / 24)
+		if days == 1 {
+			return "1 day ago"
+		}
+		return fmt.Sprintf("%d days ago", days)
+	} else if duration < 30*24*time.Hour {
+		weeks := int(duration.Hours() / 24 / 7)
+		if weeks == 1 {
+			return "1 week ago"
+		}
+		return fmt.Sprintf("%d weeks ago", weeks)
+	} else {
+		months := int(duration.Hours() / 24 / 30)
+		if months == 1 {
+			return "1 month ago"
+		}
+		return fmt.Sprintf("%d months ago", months)
+	}
+}
+
 // ── APPLY / PUSH ────────────────────────────────────────────────────────
 
 var formsApplyCmd = &cobra.Command{
@@ -466,6 +690,10 @@ func init() {
 	formsApplyCmd.Flags().Bool("skip-validation", false, "Skip schema validation before applying")
 	formsApplyCmd.Flags().Bool("dry-run", false, "Preview changes without applying")
 
+	// status flags
+	formsStatusCmd.Flags().String("file", "", "Path to local form file to compare")
+	formsStatusCmd.Flags().Bool("summary", false, "Show only change counts without details")
+
 	formsCmd.AddCommand(
 		formsListCmd,
 		formsGetCmd,
@@ -477,6 +705,7 @@ func init() {
 		formsImportCmd,
 		formsDiffCmd,
 		formsApplyCmd,
+		formsStatusCmd,
 	)
 	rootCmd.AddCommand(formsCmd)
 }
