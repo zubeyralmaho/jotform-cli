@@ -115,14 +115,14 @@ This plan implements the remaining components of the Jotform CLI DX Redesign fea
     - Test --summary flag output
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9_
 
-- [-] 5. Implement jotform open command
-  - [ ] 5.1 Create open command with form ID resolution
+- [x] 5. Implement jotform open command
+  - [x] 5.1 Create open command with form ID resolution
     - Resolve form ID from args or project context
     - Construct Jotform form URL
     - Validate form ID format before URL construction
     - _Requirements: 6.1, 6.2, 6.3_
   
-  - [ ] 5.2 Implement cross-platform browser launching
+  - [x] 5.2 Implement cross-platform browser launching
     - Detect operating system (macOS, Linux, Windows)
     - Use appropriate command for each platform (open, xdg-open, start)
     - Handle browser launch failures gracefully
