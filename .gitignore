@@ -18,5 +18,8 @@ cmd/form.yaml
 
 .kiro/**
 
+# Local design documentation should not be versioned
+docs/design/
+
 
 docs/design/REFACTOR-DESIGN.md
