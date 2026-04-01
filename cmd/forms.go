@@ -4,10 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/jotform/jotform-cli/internal/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"gopkg.in/yaml.v3"
 )
 
 var formsCmd = &cobra.Command{
@@ -50,17 +53,27 @@ var formsGetCmd = &cobra.Command{
 
 var formsCreateCmd = &cobra.Command{
 	Use:   "create",
-	Short: "Create a form from a local JSON file",
+	Short: "Create a form from a local JSON or YAML file",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		filePath, _ := cmd.Flags().GetString("file")
 		data, err := os.ReadFile(filePath)
 		if err != nil {
 			return fmt.Errorf("cannot read file: %w", err)
 		}
+
 		var schema map[string]interface{}
-		if err := json.Unmarshal(data, &schema); err != nil {
-			return fmt.Errorf("invalid JSON: %w", err)
+		ext := strings.ToLower(filepath.Ext(filePath))
+		switch ext {
+		case ".yaml", ".yml":
+			if err := yaml.Unmarshal(data, &schema); err != nil {
+				return fmt.Errorf("invalid YAML: %w", err)
+			}
+		default:
+			if err := json.Unmarshal(data, &schema); err != nil {
+				return fmt.Errorf("invalid JSON: %w", err)
+			}
 		}
+
 		client, err := newClient()
 		if err != nil {
 			return err
@@ -70,6 +83,23 @@ var formsCreateCmd = &cobra.Command{
 			return err
 		}
 		fmt.Printf("Form created: %s\nID:  %s\nURL: %s\n", form.Title, form.ID, form.URL)
+		return nil
+	},
+}
+
+var formsDeleteCmd = &cobra.Command{
+	Use:   "delete [form-id]",
+	Short: "Delete a form",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		client, err := newClient()
+		if err != nil {
+			return err
+		}
+		if err := client.DeleteForm(args[0]); err != nil {
+			return err
+		}
+		fmt.Printf("Form %s deleted.\n", args[0])
 		return nil
 	},
 }
@@ -109,9 +139,9 @@ var formsSyncCmd = &cobra.Command{
 }
 
 func init() {
-	formsCreateCmd.Flags().String("file", "", "Path to JSON form schema file")
+	formsCreateCmd.Flags().String("file", "", "Path to JSON or YAML form schema file")
 	formsCreateCmd.MarkFlagRequired("file")
 
-	formsCmd.AddCommand(formsListCmd, formsGetCmd, formsCreateCmd, formsSyncCmd)
+	formsCmd.AddCommand(formsListCmd, formsGetCmd, formsCreateCmd, formsDeleteCmd, formsSyncCmd)
 	rootCmd.AddCommand(formsCmd)
 }

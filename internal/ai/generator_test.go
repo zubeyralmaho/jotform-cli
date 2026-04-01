@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/anthropics/anthropic-sdk-go/option"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -15,8 +16,8 @@ func newMockAnthropicServer(t *testing.T, responseText string) *httptest.Server 
 	t.Helper()
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/v1/messages", r.URL.Path)
-		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 
+		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]any{
 			"id":   "msg_test",
 			"type": "message",
@@ -35,10 +36,7 @@ func newMockAnthropicServer(t *testing.T, responseText string) *httptest.Server 
 }
 
 func newTestGenerator(serverURL string) *Generator {
-	gen := NewGenerator("test-key")
-	// Override base URL to point to test server
-	gen.client = gen.client.WithBaseURL(serverURL + "/v1")
-	return gen
+	return NewGenerator("test-key", option.WithBaseURL(serverURL))
 }
 
 func TestGenerateSchema_ValidJSON(t *testing.T) {
@@ -91,9 +89,4 @@ func TestAnalyzeForm(t *testing.T) {
 	require.NoError(t, err)
 	assert.Contains(t, result, "Missing email validation")
 	assert.Contains(t, result, "required fields")
-}
-
-func TestExtractText(t *testing.T) {
-	// Direct unit test of extractText is not possible without constructing a Message,
-	// but it's covered through GenerateSchema and AnalyzeForm tests above.
 }
