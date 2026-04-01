@@ -22,7 +22,7 @@ func newTestServer(t *testing.T, handler http.HandlerFunc) (*httptest.Server, *C
 func TestGetUser_Success(t *testing.T) {
 	_, client := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Contains(t, r.URL.RawQuery, "apiKey=test-key")
-		json.NewEncoder(w).Encode(apiResponse[User]{
+		_ = json.NewEncoder(w).Encode(apiResponse[User]{
 			ResponseCode: 200,
 			Content:      User{Username: "testuser", Email: "test@example.com", AccountType: "FREE"},
 		})
@@ -47,7 +47,7 @@ func TestGetUser_Unauthorized(t *testing.T) {
 func TestListForms_Success(t *testing.T) {
 	_, client := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Contains(t, r.URL.Path, "/user/forms")
-		json.NewEncoder(w).Encode(apiResponse[[]Form]{
+		_ = json.NewEncoder(w).Encode(apiResponse[[]Form]{
 			ResponseCode: 200,
 			Content: []Form{
 				{ID: "111", Title: "Survey A"},
@@ -64,7 +64,7 @@ func TestListForms_Success(t *testing.T) {
 
 func TestListForms_Empty(t *testing.T) {
 	_, client := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(apiResponse[[]Form]{
+		_ = json.NewEncoder(w).Encode(apiResponse[[]Form]{
 			ResponseCode: 200,
 			Content:      []Form{},
 		})
@@ -78,7 +78,7 @@ func TestListForms_Empty(t *testing.T) {
 func TestGetForm_Success(t *testing.T) {
 	_, client := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Contains(t, r.URL.Path, "/form/123")
-		json.NewEncoder(w).Encode(apiResponse[FormProperties]{
+		_ = json.NewEncoder(w).Encode(apiResponse[FormProperties]{
 			ResponseCode: 200,
 			Content: FormProperties{
 				ID:    "123",

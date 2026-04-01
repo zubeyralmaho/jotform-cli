@@ -43,7 +43,7 @@ func printTable(w io.Writer, data any) error {
 	var rows []map[string]interface{}
 	if err := json.Unmarshal(b, &rows); err == nil {
 		if len(rows) == 0 {
-			fmt.Fprintln(w, "(no results)")
+			_, _ = fmt.Fprintln(w, "(no results)")
 			return nil
 		}
 		headers := sortedKeys(rows[0])
@@ -70,7 +70,7 @@ func printTable(w io.Writer, data any) error {
 		return table.Render()
 	}
 
-	fmt.Fprintln(w, data)
+	_, _ = fmt.Fprintln(w, data)
 	return nil
 }
 

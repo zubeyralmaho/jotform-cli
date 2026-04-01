@@ -114,7 +114,7 @@ func (client jotformAPIClient) executeHttpRequest(requestPath string, params int
 		return nil, err
 	}
 
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	contents, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
@@ -122,7 +122,7 @@ func (client jotformAPIClient) executeHttpRequest(requestPath string, params int
 
 	if client.outputType == "json" {
 		var f interface{}
-		json.Unmarshal(contents, &f)
+		_ = json.Unmarshal(contents, &f)
 		result, ok := f.(map[string]interface{})
 		if !ok {
 			return nil, fmt.Errorf("Unexpected non-json response")
@@ -136,7 +136,7 @@ func (client jotformAPIClient) executeHttpRequest(requestPath string, params int
 		}
 	} else if client.outputType == "xml" {
 		var f interface{}
-		xml.Unmarshal(contents, &f)
+		_ = xml.Unmarshal(contents, &f)
 		return contents, nil
 	}
 

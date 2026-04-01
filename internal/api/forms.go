@@ -78,7 +78,7 @@ func (c *Client) CreateForm(schema map[string]interface{}) (*Form, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
@@ -113,7 +113,7 @@ func (c *Client) UpdateForm(id string, schema map[string]interface{}) (*Form, er
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 400 {
 		respBody, _ := io.ReadAll(resp.Body)
@@ -137,7 +137,7 @@ func (c *Client) DeleteForm(id string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("delete failed: %d", resp.StatusCode)
 	}

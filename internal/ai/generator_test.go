@@ -18,7 +18,7 @@ func newMockAnthropicServer(t *testing.T, responseText string) *httptest.Server 
 		assert.Equal(t, "/v1/messages", r.URL.Path)
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"id":   "msg_test",
 			"type": "message",
 			"role": "assistant",
