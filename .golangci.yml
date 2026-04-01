@@ -1,0 +1,10 @@
+run:
+  timeout: 5m
+
+issues:
+  exclude-dirs:
+    - docs/external/jotform-api-go
+  exclude-rules:
+    - path: ^docs/external/jotform-api-go/.*\.go$
+      linters:
+        - errcheck

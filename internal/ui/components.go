@@ -145,7 +145,7 @@ func RenderStaggered(rows []string, interval time.Duration) {
 		interval: interval,
 	}
 	p := tea.NewProgram(m)
-	p.Run()
+	_, _ = p.Run()
 }
 
 // ── Banner ─────────────────────────────────────────────────────────────

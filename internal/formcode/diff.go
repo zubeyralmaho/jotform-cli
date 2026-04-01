@@ -43,11 +43,6 @@ func unifiedDiff(oldName, newName string, oldLines, newLines []string) string {
 	buf.WriteString(fmt.Sprintf("+++ %s\n", newName))
 
 	// Simple line-by-line comparison with context
-	maxLen := len(oldLines)
-	if len(newLines) > maxLen {
-		maxLen = len(newLines)
-	}
-
 	type change struct {
 		lineNo int
 		old    string

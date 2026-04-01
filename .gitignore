@@ -6,6 +6,9 @@ jotform-new
 dist/
 coverage.out
 .DS_Store
+node_modules/
+package.json
+package-lock.json
 
 # Local project context files should not be versioned.
 **/.jotform.yaml
@@ -14,5 +17,6 @@ coverage.out
 cmd/form.yaml
 
 .kiro/**
+
 
 docs/design/REFACTOR-DESIGN.md

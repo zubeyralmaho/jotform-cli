@@ -32,7 +32,7 @@ func makeReq(args map[string]any) mcpgo.CallToolRequest {
 
 func TestHandleListForms(t *testing.T) {
 	client := newTestAPI(t, func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"responseCode": 200,
 			"content": []map[string]any{
 				{"id": "111", "title": "Form A"},
@@ -54,7 +54,7 @@ func TestHandleListForms(t *testing.T) {
 func TestHandleGetForm(t *testing.T) {
 	client := newTestAPI(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Contains(t, r.URL.Path, "/form/999")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"responseCode": 200,
 			"content": map[string]any{
 				"id":    "999",
@@ -86,7 +86,7 @@ func TestHandleGetForm_MissingID(t *testing.T) {
 
 func TestHandleCreateForm(t *testing.T) {
 	client := newTestAPI(t, func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"responseCode": 200,
 			"content": map[string]any{
 				"id":    "555",
@@ -119,7 +119,7 @@ func TestHandleUpdateForm(t *testing.T) {
 	client := newTestAPI(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodPut, r.Method)
 		assert.Contains(t, r.URL.Path, "/form/777")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"responseCode": 200,
 			"content": map[string]any{
 				"id":    "777",
@@ -167,7 +167,7 @@ func TestHandleDeleteForm(t *testing.T) {
 	client := newTestAPI(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodDelete, r.Method)
 		assert.Contains(t, r.URL.Path, "/form/888")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"responseCode": 200,
 			"message":      "success",
 		})
@@ -194,7 +194,7 @@ func TestHandleDeleteForm_MissingID(t *testing.T) {
 func TestHandleExportForm(t *testing.T) {
 	client := newTestAPI(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Contains(t, r.URL.Path, "/form/444")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"responseCode": 200,
 			"content": map[string]any{
 				"id":    "444",
@@ -219,7 +219,7 @@ func TestHandleExportForm(t *testing.T) {
 func TestHandleListSubmissions(t *testing.T) {
 	client := newTestAPI(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Contains(t, r.URL.Path, "/form/123/submissions")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"responseCode": 200,
 			"content": []map[string]any{
 				{"id": "s1", "created_at": "2025-01-01"},

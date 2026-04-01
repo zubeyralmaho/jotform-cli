@@ -54,7 +54,7 @@ func printTable(w io.Writer, data any) error {
 			for i, h := range headers {
 				vals[i] = fmt.Sprintf("%v", row[h])
 			}
-			table.Append(vals)
+			_ = table.Append(vals)
 		}
 		return table.Render()
 	}
@@ -65,7 +65,7 @@ func printTable(w io.Writer, data any) error {
 		table := tablewriter.NewTable(w)
 		table.Header([]string{"Field", "Value"})
 		for _, k := range sortedKeys(obj) {
-			table.Append([]string{k, fmt.Sprintf("%v", obj[k])})
+			_ = table.Append([]string{k, fmt.Sprintf("%v", obj[k])})
 		}
 		return table.Render()
 	}
