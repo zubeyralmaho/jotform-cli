@@ -1,0 +1,53 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/jotform/jotform-cli/cmd.Version={{.Version}}
+      - -X github.com/jotform/jotform-cli/cmd.Commit={{.Commit}}
+      - -X github.com/jotform/jotform-cli/cmd.BuildDate={{.Date}}
+
+archives:
+  - format: tar.gz
+    name_template: "jotform_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+
+checksum:
+  name_template: "checksums.txt"
+
+brews:
+  - name: jotform
+    repository:
+      owner: jotform
+      name: homebrew-tap
+    description: "AI-native Jotform CLI for developers and AI agents"
+    homepage: "https://github.com/jotform/jotform-cli"
+    install: |
+      bin.install "jotform"
+    test: |
+      system "#{bin}/jotform", "version"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - Merge pull request
