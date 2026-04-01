@@ -91,6 +91,12 @@ jotform get 242753193847060 --output yaml
   <img src="assets/jotform-share-command.png" alt="jotform share command" width="1100" />
 </p>
 
+### Commands Help
+
+<p align="center">
+  <img src="assets/jotform-commands.png" alt="jotform commands help" width="1100" />
+</p>
+
 ## Command Overview
 
 ### Core
