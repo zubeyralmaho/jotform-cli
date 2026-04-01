@@ -1,0 +1,99 @@
+package ai
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func newMockAnthropicServer(t *testing.T, responseText string) *httptest.Server {
+	t.Helper()
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v1/messages", r.URL.Path)
+		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+
+		json.NewEncoder(w).Encode(map[string]any{
+			"id":   "msg_test",
+			"type": "message",
+			"role": "assistant",
+			"content": []map[string]any{
+				{"type": "text", "text": responseText},
+			},
+			"model":         "claude-sonnet-4-5",
+			"stop_reason":   "end_turn",
+			"stop_sequence": nil,
+			"usage":         map[string]any{"input_tokens": 10, "output_tokens": 50},
+		})
+	}))
+	t.Cleanup(ts.Close)
+	return ts
+}
+
+func newTestGenerator(serverURL string) *Generator {
+	gen := NewGenerator("test-key")
+	// Override base URL to point to test server
+	gen.client = gen.client.WithBaseURL(serverURL + "/v1")
+	return gen
+}
+
+func TestGenerateSchema_ValidJSON(t *testing.T) {
+	schema := `{"questions":{"1":{"type":"control_head","text":"Feedback","order":"1"}},"properties":{"title":"Feedback Form"}}`
+	ts := newMockAnthropicServer(t, schema)
+	gen := newTestGenerator(ts.URL)
+
+	result, err := gen.GenerateSchema(context.Background(), "a feedback form")
+	require.NoError(t, err)
+	assert.Contains(t, result, "questions")
+	assert.Contains(t, result, "properties")
+
+	props, ok := result["properties"].(map[string]any)
+	require.True(t, ok)
+	assert.Equal(t, "Feedback Form", props["title"])
+}
+
+func TestGenerateSchema_StripsMarkdownFences(t *testing.T) {
+	schema := "```json\n{\"questions\":{},\"properties\":{\"title\":\"Test\"}}\n```"
+	ts := newMockAnthropicServer(t, schema)
+	gen := newTestGenerator(ts.URL)
+
+	result, err := gen.GenerateSchema(context.Background(), "test form")
+	require.NoError(t, err)
+	assert.Contains(t, result, "properties")
+}
+
+func TestGenerateSchema_InvalidJSON(t *testing.T) {
+	ts := newMockAnthropicServer(t, "this is not json at all")
+	gen := newTestGenerator(ts.URL)
+
+	_, err := gen.GenerateSchema(context.Background(), "something")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid JSON")
+}
+
+func TestAnalyzeForm(t *testing.T) {
+	analysis := "## Issues\n1. Missing email validation\n2. Too many required fields"
+	ts := newMockAnthropicServer(t, analysis)
+	gen := newTestGenerator(ts.URL)
+
+	form := map[string]any{
+		"title": "Test Form",
+		"questions": map[string]any{
+			"1": map[string]any{"type": "control_textbox", "text": "Name"},
+		},
+	}
+
+	result, err := gen.AnalyzeForm(context.Background(), form)
+	require.NoError(t, err)
+	assert.Contains(t, result, "Missing email validation")
+	assert.Contains(t, result, "required fields")
+}
+
+func TestExtractText(t *testing.T) {
+	// Direct unit test of extractText is not possible without constructing a Message,
+	// but it's covered through GenerateSchema and AnalyzeForm tests above.
+}

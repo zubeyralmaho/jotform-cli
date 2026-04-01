@@ -15,8 +15,9 @@ type Generator struct {
 	model  anthropic.Model
 }
 
-func NewGenerator(apiKey string) *Generator {
-	client := anthropic.NewClient(option.WithAPIKey(apiKey))
+func NewGenerator(apiKey string, opts ...option.RequestOption) *Generator {
+	allOpts := append([]option.RequestOption{option.WithAPIKey(apiKey)}, opts...)
+	client := anthropic.NewClient(allOpts...)
 	return &Generator{
 		client: &client,
 		model:  anthropic.ModelClaudeSonnet4_5,
