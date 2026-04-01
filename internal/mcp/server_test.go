@@ -24,7 +24,7 @@ func newTestAPI(t *testing.T, handler http.HandlerFunc) *api.Client {
 
 func makeReq(args map[string]any) mcpgo.CallToolRequest {
 	return mcpgo.CallToolRequest{
-		Params: mcpgo.CallToolRequestParams{
+		Params: mcpgo.CallToolParams{
 			Arguments: args,
 		},
 	}

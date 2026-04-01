@@ -88,7 +88,7 @@ func (s *Server) handleListForms(ctx context.Context, req mcpgo.CallToolRequest)
 }
 
 func (s *Server) handleGetForm(ctx context.Context, req mcpgo.CallToolRequest) (*mcpgo.CallToolResult, error) {
-	formID := mcpgo.ParseString(req, "form_id", "")
+	formID := req.GetString("form_id", "")
 	if formID == "" {
 		return mcpgo.NewToolResultError("form_id is required"), nil
 	}
@@ -101,7 +101,7 @@ func (s *Server) handleGetForm(ctx context.Context, req mcpgo.CallToolRequest) (
 }
 
 func (s *Server) handleCreateForm(ctx context.Context, req mcpgo.CallToolRequest) (*mcpgo.CallToolResult, error) {
-	schemaStr := mcpgo.ParseString(req, "schema", "")
+	schemaStr := req.GetString("schema", "")
 	if schemaStr == "" {
 		return mcpgo.NewToolResultError("schema is required"), nil
 	}
@@ -118,11 +118,11 @@ func (s *Server) handleCreateForm(ctx context.Context, req mcpgo.CallToolRequest
 }
 
 func (s *Server) handleListSubmissions(ctx context.Context, req mcpgo.CallToolRequest) (*mcpgo.CallToolResult, error) {
-	formID := mcpgo.ParseString(req, "form_id", "")
+	formID := req.GetString("form_id", "")
 	if formID == "" {
 		return mcpgo.NewToolResultError("form_id is required"), nil
 	}
-	limit := mcpgo.ParseInt(req, "limit", 20)
+	limit := req.GetInt("limit", 20)
 	subs, err := s.apiClient.GetSubmissions(formID, 0, limit, "created_at", "DESC")
 	if err != nil {
 		return mcpgo.NewToolResultError(err.Error()), nil
@@ -132,7 +132,7 @@ func (s *Server) handleListSubmissions(ctx context.Context, req mcpgo.CallToolRe
 }
 
 func (s *Server) handleGenerateSchema(ctx context.Context, req mcpgo.CallToolRequest) (*mcpgo.CallToolResult, error) {
-	prompt := mcpgo.ParseString(req, "prompt", "")
+	prompt := req.GetString("prompt", "")
 	if prompt == "" {
 		return mcpgo.NewToolResultError("prompt is required"), nil
 	}
