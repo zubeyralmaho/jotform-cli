@@ -101,15 +101,6 @@ var shortWatchCmd = &cobra.Command{
 	RunE:  runSubmissionsWatch,
 }
 
-// ── Browser shortcut ────────────────────────────────────────────────────
-
-var shortOpenCmd = &cobra.Command{
-	Use:   "open [form-id]",
-	Short: "Open form in browser (shortcut for: open)",
-	Args:  cobra.MaximumNArgs(1),
-	RunE:  runOpen,
-}
-
 // ── AI shortcut ─────────────────────────────────────────────────────────
 
 var shortGenerateCmd = &cobra.Command{
@@ -172,7 +163,6 @@ func init() {
 		shortDiffCmd,
 		shortStatusCmd,
 		shortWatchCmd,
-		shortOpenCmd,
 		shortGenerateCmd,
 	)
 }

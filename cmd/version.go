@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/jotform/jotform-cli/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +17,13 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print version information",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("jotform %s (commit: %s, built: %s)\n", Version, Commit, BuildDate)
+		fmt.Println(ui.LogoWithText())
+		fmt.Println()
+		fmt.Println(ui.KeyValuePairs([][2]string{
+			{"Version", Version},
+			{"Commit", Commit},
+			{"Built", BuildDate},
+		}))
 	},
 }
 

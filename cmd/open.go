@@ -7,6 +7,7 @@ import (
 	"runtime"
 
 	"github.com/jotform/jotform-cli/internal/config"
+	"github.com/jotform/jotform-cli/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -40,13 +41,12 @@ func runOpen(cmd *cobra.Command, args []string) error {
 
 	// Launch browser
 	if err := openBrowser(formURL); err != nil {
-		// Display URL for manual copying when browser launch fails
-		fmt.Printf("Error: failed to open browser: %v\n", err)
-		fmt.Printf("Form URL: %s\n", formURL)
+		fmt.Println(ui.ErrorBanner("Failed to open browser"))
+		fmt.Println(ui.KeyValue("URL", formURL))
 		return err
 	}
 
-	fmt.Printf("Opening %s\n", formURL)
+	fmt.Println(ui.LogoCompact() + "  " + ui.Muted.Render("Opening ") + ui.Value.Render(formURL))
 	return nil
 }
 

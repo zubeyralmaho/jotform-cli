@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/jotform/jotform-cli/internal/ai"
+	"github.com/jotform/jotform-cli/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -29,14 +30,17 @@ var aiGenerateCmd = &cobra.Command{
 
 		gen := newAIGenerator(cmd, apiKey)
 
-		result, err := gen.GenerateSchema(context.Background(), prompt)
+		res, err := ui.RunWithSpinner("Generating schema...", func() (interface{}, error) {
+			return gen.GenerateSchema(context.Background(), prompt)
+		})
 		if err != nil {
 			return err
 		}
+		result := res.(*ai.GenerateResult)
 
 		showUsage, _ := cmd.Flags().GetBool("show-usage")
 		if showUsage {
-			fmt.Fprintf(os.Stderr, "[tokens: in=%d out=%d]\n", result.Usage.InputTokens, result.Usage.OutputTokens)
+			fmt.Fprintln(os.Stderr, ui.Muted.Render(fmt.Sprintf("[tokens: in=%d out=%d]", result.Usage.InputTokens, result.Usage.OutputTokens)))
 		}
 
 		outFile, _ := cmd.Flags().GetString("out")
@@ -45,7 +49,7 @@ var aiGenerateCmd = &cobra.Command{
 			if err := os.WriteFile(outFile, data, 0644); err != nil {
 				return err
 			}
-			fmt.Printf("Schema written to %s\n", outFile)
+			fmt.Println(ui.SuccessBanner("Schema written to " + outFile))
 			return nil
 		}
 
@@ -69,27 +73,40 @@ var aiAnalyzeCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		form, err := client.GetForm(args[0])
+
+		type analyzeResult struct {
+			suggestions string
+			usage       *ai.Usage
+		}
+
+		res, err := ui.RunWithSpinner("Analyzing form...", func() (interface{}, error) {
+			form, err := client.GetForm(args[0])
+			if err != nil {
+				return nil, err
+			}
+			formMap := map[string]interface{}{
+				"title":     form.Title,
+				"questions": form.Questions,
+			}
+			gen := newAIGenerator(cmd, apiKey)
+			suggestions, usage, err := gen.AnalyzeForm(context.Background(), formMap)
+			if err != nil {
+				return nil, err
+			}
+			return &analyzeResult{suggestions: suggestions, usage: usage}, nil
+		})
 		if err != nil {
 			return err
 		}
+		result := res.(*analyzeResult)
 
-		formMap := map[string]interface{}{
-			"title":     form.Title,
-			"questions": form.Questions,
-		}
-
-		gen := newAIGenerator(cmd, apiKey)
-		suggestions, usage, err := gen.AnalyzeForm(context.Background(), formMap)
-		if err != nil {
-			return err
-		}
-
-		fmt.Println(suggestions)
+		fmt.Println(ui.Title.Render("  Analysis"))
+		fmt.Println(ui.Separator(60))
+		fmt.Println(result.suggestions)
 
 		showUsage, _ := cmd.Flags().GetBool("show-usage")
-		if showUsage && usage != nil {
-			fmt.Fprintf(os.Stderr, "[tokens: in=%d out=%d]\n", usage.InputTokens, usage.OutputTokens)
+		if showUsage && result.usage != nil {
+			fmt.Fprintln(os.Stderr, ui.Muted.Render(fmt.Sprintf("[tokens: in=%d out=%d]", result.usage.InputTokens, result.usage.OutputTokens)))
 		}
 		return nil
 	},

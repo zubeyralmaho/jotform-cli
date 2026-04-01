@@ -9,6 +9,7 @@ import (
 
 	"github.com/jotform/jotform-cli/internal/config"
 	"github.com/jotform/jotform-cli/internal/formcode"
+	"github.com/jotform/jotform-cli/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -163,14 +164,14 @@ func initExistingForm(formID, schemaFile string) error {
 	}
 
 	// Display success message
-	fmt.Printf("✔ Exported form → %s\n", schemaFile)
-	fmt.Printf("✔ Created %s\n", config.ProjectFileName)
+	fmt.Println(ui.SuccessBanner("Project initialized"))
 	fmt.Println()
-	fmt.Println("Now you can use:")
-	fmt.Println("  jotform diff     compare local vs remote")
-	fmt.Println("  jotform push     apply local changes")
-	fmt.Println("  jotform pull     download latest remote")
-	fmt.Println("  jotform watch    stream submissions")
+	fmt.Println(ui.KeyValuePairs([][2]string{
+		{"Schema", schemaFile},
+		{"Config", config.ProjectFileName},
+	}))
+	fmt.Println()
+	printInitHints()
 
 	return nil
 }
@@ -222,17 +223,25 @@ func initNewForm(formTitle, schemaFile string) error {
 	}
 
 	// Display success message
-	fmt.Printf("✔ Created form: %s (ID: %s)\n", formTitle, form.ID)
-	fmt.Printf("✔ Exported form → %s\n", schemaFile)
-	fmt.Printf("✔ Created %s\n", config.ProjectFileName)
+	fmt.Println(ui.SuccessBanner("Form created & project initialized"))
 	fmt.Println()
-	fmt.Println("Now you can use:")
-	fmt.Println("  jotform diff     compare local vs remote")
-	fmt.Println("  jotform push     apply local changes")
-	fmt.Println("  jotform pull     download latest remote")
-	fmt.Println("  jotform watch    stream submissions")
+	fmt.Println(ui.KeyValuePairs([][2]string{
+		{"Form", fmt.Sprintf("%s (ID: %s)", formTitle, form.ID)},
+		{"Schema", schemaFile},
+		{"Config", config.ProjectFileName},
+	}))
+	fmt.Println()
+	printInitHints()
 
 	return nil
+}
+
+func printInitHints() {
+	fmt.Println(ui.Muted.Render("Now you can use:"))
+	fmt.Println("  " + ui.Value.Render("jotform diff") + "     " + ui.Muted.Render("compare local vs remote"))
+	fmt.Println("  " + ui.Value.Render("jotform push") + "     " + ui.Muted.Render("apply local changes"))
+	fmt.Println("  " + ui.Value.Render("jotform pull") + "     " + ui.Muted.Render("download latest remote"))
+	fmt.Println("  " + ui.Value.Render("jotform watch") + "    " + ui.Muted.Render("stream submissions"))
 }
 
 func init() {

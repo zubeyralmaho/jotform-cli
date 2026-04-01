@@ -11,6 +11,7 @@ import (
 	"github.com/jotform/jotform-cli/internal/config"
 	"github.com/jotform/jotform-cli/internal/formcode"
 	"github.com/jotform/jotform-cli/internal/output"
+	"github.com/jotform/jotform-cli/internal/ui"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -34,11 +35,40 @@ func runFormsList(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	forms, err := client.ListForms(0, 100)
+
+	res, err := ui.RunWithSpinner("Loading forms...", func() (interface{}, error) {
+		return client.ListForms(0, 100)
+	})
 	if err != nil {
 		return err
 	}
-	return output.Print(forms, output.Format(viper.GetString("output")))
+	forms := res.([]api.Form)
+
+	format := output.Format(viper.GetString("output"))
+	if format != output.FormatTable {
+		return output.Print(forms, format)
+	}
+
+	// Styled table output with staggered rendering
+	if len(forms) == 0 {
+		fmt.Println(ui.Muted.Render("  (no forms found)"))
+		return nil
+	}
+
+	fmt.Println(ui.Title.Render("  Forms") + ui.Muted.Render(fmt.Sprintf("  (%d total)", len(forms))))
+	fmt.Println(ui.Separator(60))
+
+	rows := make([]string, 0, len(forms))
+	for _, f := range forms {
+		id := ui.Subtitle.Render(f.ID)
+		title := ui.Value.Render(f.Title)
+		status := ui.Muted.Render(f.Status)
+		count := ui.Label.Render(fmt.Sprintf("%s submissions", string(f.Count)))
+		rows = append(rows, fmt.Sprintf("  %s  %s  %s  %s", id, title, status, count))
+	}
+
+	ui.RenderStaggered(rows, 20*time.Millisecond)
+	return nil
 }
 
 // ── GET ─────────────────────────────────────────────────────────────────
@@ -59,10 +89,14 @@ func runFormsGet(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	form, err := client.GetForm(formID)
+
+	res, err := ui.RunWithSpinner("Fetching form...", func() (interface{}, error) {
+		return client.GetForm(formID)
+	})
 	if err != nil {
 		return err
 	}
+	form := res.(*api.FormProperties)
 	return output.Print(form, output.Format(viper.GetString("output")))
 }
 
@@ -103,11 +137,21 @@ func runFormsCreate(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	form, err := client.CreateForm(schema)
+
+	res, err := ui.RunWithSpinner("Creating form...", func() (interface{}, error) {
+		return client.CreateForm(schema)
+	})
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Form created: %s\nID:  %s\nURL: %s\n", form.Title, form.ID, form.URL)
+	form := res.(*api.Form)
+
+	fmt.Println(ui.SuccessBanner("Form created"))
+	fmt.Println(ui.KeyValuePairs([][2]string{
+		{"Title", form.Title},
+		{"ID", form.ID},
+		{"URL", form.URL},
+	}))
 	return nil
 }
 
@@ -151,8 +195,8 @@ func runFormsUpdate(cmd *cobra.Command, args []string) error {
 
 	dryRun, _ := cmd.Flags().GetBool("dry-run")
 	if dryRun {
-		fmt.Printf("⚠️  Would update form %s from %s\n", formID, schemaFile)
-		fmt.Println("Run without --dry-run to apply.")
+		fmt.Println(ui.Warning.Render("  Would update form "+formID+" from "+schemaFile))
+		fmt.Println(ui.Muted.Render("  Run without --dry-run to apply."))
 		return nil
 	}
 
@@ -160,11 +204,21 @@ func runFormsUpdate(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	form, err := client.UpdateForm(formID, schema)
+
+	res, err := ui.RunWithSpinner("Updating form...", func() (interface{}, error) {
+		return client.UpdateForm(formID, schema)
+	})
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Form updated: %s\nID:  %s\nURL: %s\n", form.Title, form.ID, form.URL)
+	form := res.(*api.Form)
+
+	fmt.Println(ui.SuccessBanner("Form updated"))
+	fmt.Println(ui.KeyValuePairs([][2]string{
+		{"Title", form.Title},
+		{"ID", form.ID},
+		{"URL", form.URL},
+	}))
 	return nil
 }
 
@@ -185,8 +239,8 @@ func runFormsDelete(cmd *cobra.Command, args []string) error {
 
 	dryRun, _ := cmd.Flags().GetBool("dry-run")
 	if dryRun {
-		fmt.Printf("⚠️  Would delete form %s\n", formID)
-		fmt.Println("Run without --dry-run to confirm.")
+		fmt.Println(ui.Warning.Render("  Would delete form " + formID))
+		fmt.Println(ui.Muted.Render("  Run without --dry-run to confirm."))
 		return nil
 	}
 
@@ -194,7 +248,7 @@ func runFormsDelete(cmd *cobra.Command, args []string) error {
 	force, _ := cmd.Flags().GetBool("force")
 	if !force {
 		if !confirmPrompt(fmt.Sprintf("Delete form %s? This cannot be undone.", formID)) {
-			fmt.Println("Cancelled.")
+			fmt.Println(ui.Muted.Render("  Cancelled."))
 			return nil
 		}
 	}
@@ -203,10 +257,14 @@ func runFormsDelete(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	if err := client.DeleteForm(formID); err != nil {
+
+	_, err = ui.RunWithSpinner("Deleting form...", func() (interface{}, error) {
+		return nil, client.DeleteForm(formID)
+	})
+	if err != nil {
 		return err
 	}
-	fmt.Printf("Form %s deleted.\n", formID)
+	fmt.Println(ui.SuccessBanner("Form " + formID + " deleted"))
 	return nil
 }
 
@@ -277,20 +335,24 @@ func runFormsExport(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	form, err := client.GetForm(formID)
+
+	res, err := ui.RunWithSpinner("Exporting form...", func() (interface{}, error) {
+		form, err := client.GetForm(formID)
+		if err != nil {
+			return nil, err
+		}
+		data, err := formcode.FormPropertiesToMap(form)
+		if err != nil {
+			return nil, err
+		}
+		return data, formcode.WriteFile(outPath, data)
+	})
 	if err != nil {
 		return err
 	}
+	_ = res
 
-	data, err := formcode.FormPropertiesToMap(form)
-	if err != nil {
-		return err
-	}
-
-	if err := formcode.WriteFile(outPath, data); err != nil {
-		return err
-	}
-	fmt.Printf("Exported form %s → %s\n", formID, outPath)
+	fmt.Println(ui.SuccessBanner(fmt.Sprintf("Exported form %s → %s", formID, outPath)))
 	return nil
 }
 
@@ -386,10 +448,13 @@ func runFormsStatus(cmd *cobra.Command, args []string) error {
 
 	// Create an adapter that wraps the API client
 	adapter := &apiClientAdapter{client: client}
-	report, err := formcode.ComputeStatus(adapter, formID, schemaFile)
+	res, err := ui.RunWithSpinner("Comparing local and remote...", func() (interface{}, error) {
+		return formcode.ComputeStatus(adapter, formID, schemaFile)
+	})
 	if err != nil {
 		return err
 	}
+	report := res.(*formcode.StatusReport)
 
 	// Check for --summary flag
 	summary, _ := cmd.Flags().GetBool("summary")
@@ -426,36 +491,38 @@ func (a *apiClientAdapter) GetForm(id string) (*formcode.FormProperties, error) 
 
 // displayStatusReport shows the full status report with all changes
 func displayStatusReport(report *formcode.StatusReport) {
-	fmt.Printf("Form: %s (%s)\n", report.FormName, report.FormID)
-	fmt.Printf("Local schema: %s (modified %s)\n", 
-		filepath.Base(report.LocalPath), 
-		formatRelativeTime(report.LocalModified))
-	fmt.Printf("Remote: last updated %s\n\n", formatRelativeTime(report.RemoteModified))
+	fmt.Println(ui.Title.Render("  Status"))
+	fmt.Println(ui.Separator(60))
+	fmt.Println(ui.KeyValuePairs([][2]string{
+		{"  Form", fmt.Sprintf("%s (%s)", report.FormName, report.FormID)},
+		{"  Local", fmt.Sprintf("%s (modified %s)", filepath.Base(report.LocalPath), formatRelativeTime(report.LocalModified))},
+		{"  Remote", fmt.Sprintf("last updated %s", formatRelativeTime(report.RemoteModified))},
+	}))
+	fmt.Println()
 
 	if !report.HasChanges {
-		fmt.Println("No changes detected.")
+		fmt.Println(ui.Success.Render("  No changes detected."))
 		return
 	}
 
-	fmt.Println("Changes:")
+	fmt.Println(ui.Subtitle.Render("  Changes:"))
 	for _, change := range report.Changes {
 		displayChange(change)
 	}
 
 	fmt.Println()
-	// Suggest next actions based on timestamps
 	if report.LocalModified.After(report.RemoteModified) {
-		fmt.Println("Run 'jotform push' to apply local changes.")
+		fmt.Println(ui.Muted.Render("  Run ") + ui.Value.Render("jotform push") + ui.Muted.Render(" to apply local changes."))
 	} else {
-		fmt.Println("Run 'jotform pull' to download remote changes.")
+		fmt.Println(ui.Muted.Render("  Run ") + ui.Value.Render("jotform pull") + ui.Muted.Render(" to download remote changes."))
 	}
-	fmt.Println("Run 'jotform diff' to see detailed differences.")
+	fmt.Println(ui.Muted.Render("  Run ") + ui.Value.Render("jotform diff") + ui.Muted.Render(" to see detailed differences."))
 }
 
 // displayStatusSummary shows only change counts
 func displayStatusSummary(report *formcode.StatusReport) {
 	if !report.HasChanges {
-		fmt.Println("No changes detected.")
+		fmt.Println(ui.Success.Render("  No changes detected."))
 		return
 	}
 
@@ -474,39 +541,46 @@ func displayStatusSummary(report *formcode.StatusReport) {
 		}
 	}
 
-	fmt.Printf("%d changes: %d modified, %d added, %d deleted\n", 
-		len(report.Changes), modified, added, deleted)
+	parts := []string{
+		ui.Value.Render(fmt.Sprintf("%d changes:", len(report.Changes))),
+		ui.Modified.Render(fmt.Sprintf("%d modified", modified)),
+		ui.Added.Render(fmt.Sprintf("%d added", added)),
+		ui.Deleted.Render(fmt.Sprintf("%d deleted", deleted)),
+	}
+	fmt.Println("  " + parts[0] + " " + parts[1] + ", " + parts[2] + ", " + parts[3])
 }
 
 // displayChange formats a single change for display
 func displayChange(change formcode.Change) {
 	var indicator string
+	var style func(...string) string
 	switch change.Type {
 	case formcode.ChangeAdded:
 		indicator = "+"
+		style = ui.Added.Render
 	case formcode.ChangeModified:
 		indicator = "~"
+		style = ui.Modified.Render
 	case formcode.ChangeDeleted:
 		indicator = "-"
+		style = ui.Deleted.Render
+	default:
+		style = ui.Muted.Render
 	}
 
 	// Format the change based on type
 	if change.Type == formcode.ChangeModified && change.OldValue != nil && change.NewValue != nil {
-		// Show old → new for modifications
 		oldStr := formatValue(change.OldValue)
 		newStr := formatValue(change.NewValue)
-		fmt.Printf("  %s %s: %s → %s\n", indicator, change.Path, oldStr, newStr)
+		fmt.Printf("  %s %s: %s → %s\n", style(indicator), change.Path, ui.Muted.Render(oldStr), ui.Value.Render(newStr))
 	} else if change.Type == formcode.ChangeAdded {
-		// Show new value for additions
 		newStr := formatValue(change.NewValue)
-		fmt.Printf("  %s %s: %s\n", indicator, change.Path, newStr)
+		fmt.Printf("  %s %s: %s\n", style(indicator), change.Path, ui.Value.Render(newStr))
 	} else if change.Type == formcode.ChangeDeleted {
-		// Show old value for deletions
 		oldStr := formatValue(change.OldValue)
-		fmt.Printf("  %s %s: %s\n", indicator, change.Path, oldStr)
+		fmt.Printf("  %s %s: %s\n", style(indicator), change.Path, ui.Muted.Render(oldStr))
 	} else {
-		// Fallback to description
-		fmt.Printf("  %s %s\n", indicator, change.Description)
+		fmt.Printf("  %s %s\n", style(indicator), change.Description)
 	}
 }
 
@@ -633,7 +707,7 @@ func runFormsApply(cmd *cobra.Command, args []string) error {
 	}
 
 	if !formcode.HasChanges(remote, local) {
-		fmt.Println("No changes to apply.")
+		fmt.Println(ui.Success.Render("  No changes to apply."))
 		return nil
 	}
 
@@ -641,21 +715,30 @@ func runFormsApply(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Changes to apply:")
+	fmt.Println(ui.Subtitle.Render("  Changes to apply:"))
 	fmt.Print(diff)
 	fmt.Println()
 
 	dryRun, _ := cmd.Flags().GetBool("dry-run")
 	if dryRun {
-		fmt.Println("No changes applied (--dry-run).")
+		fmt.Println(ui.Warning.Render("  No changes applied (--dry-run)."))
 		return nil
 	}
 
-	updated, err := client.UpdateForm(formID, local)
+	res, err := ui.RunWithSpinner("Applying changes...", func() (interface{}, error) {
+		return client.UpdateForm(formID, local)
+	})
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Form updated: %s\nID:  %s\nURL: %s\n", updated.Title, updated.ID, updated.URL)
+	updated := res.(*api.Form)
+
+	fmt.Println(ui.SuccessBanner("Form updated"))
+	fmt.Println(ui.KeyValuePairs([][2]string{
+		{"Title", updated.Title},
+		{"ID", updated.ID},
+		{"URL", updated.URL},
+	}))
 	return nil
 }
 

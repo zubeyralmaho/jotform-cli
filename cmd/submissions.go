@@ -9,6 +9,7 @@ import (
 	"github.com/jotform/jotform-cli/internal/api"
 	"github.com/jotform/jotform-cli/internal/config"
 	"github.com/jotform/jotform-cli/internal/output"
+	"github.com/jotform/jotform-cli/internal/ui"
 	"github.com/jotform/jotform-cli/internal/watch"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -34,10 +35,14 @@ var submissionsListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		subs, err := client.GetSubmissions(formID, 0, limit, "created_at", "DESC")
+
+		res, err := ui.RunWithSpinner("Loading submissions...", func() (interface{}, error) {
+			return client.GetSubmissions(formID, 0, limit, "created_at", "DESC")
+		})
 		if err != nil {
 			return err
 		}
+		subs := res.([]api.Submission)
 		return output.Print(subs, output.Format(viper.GetString("output")))
 	},
 }

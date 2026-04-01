@@ -5,8 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jotform/jotform-cli/internal/api"
 	"github.com/jotform/jotform-cli/internal/config"
 	"github.com/jotform/jotform-cli/internal/formcode"
+	"github.com/jotform/jotform-cli/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -35,10 +37,17 @@ func runClone(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	form, err := client.GetForm(formID)
+	res, err := ui.RunWithSpinner("Fetching form...", func() (interface{}, error) {
+		form, err := client.GetForm(formID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch form: %w", err)
+		}
+		return form, nil
+	})
 	if err != nil {
-		return fmt.Errorf("failed to fetch form: %w", err)
+		return err
 	}
+	form := res.(*api.FormProperties)
 
 	// Determine target directory name
 	targetDir := determineCloneDir(form.Title, formID, nameFlag)
@@ -79,17 +88,21 @@ func runClone(cmd *cobra.Command, args []string) error {
 	cfg := &config.ProjectConfig{
 		FormID: formID,
 		Name:   form.Title,
-		Schema: schemaFile, // Relative path within the project directory
+		Schema: schemaFile,
 	}
 
 	if err := config.SaveProject(cfg, targetDir); err != nil {
 		return fmt.Errorf("failed to create .jotform.yaml: %w", err)
 	}
 
-	// Display success messages
-	fmt.Printf("Creating directory: %s/\n", targetDir)
-	fmt.Printf("✔ Exported form → %s/%s\n", targetDir, schemaFile)
-	fmt.Printf("✔ Created %s/%s\n", targetDir, config.ProjectFileName)
+	// Display success
+	fmt.Println(ui.SuccessBanner("Cloned into " + targetDir + "/"))
+	fmt.Println()
+	fmt.Println(ui.KeyValuePairs([][2]string{
+		{"Form", form.Title},
+		{"Schema", targetDir + "/" + schemaFile},
+		{"Config", targetDir + "/" + config.ProjectFileName},
+	}))
 
 	return nil
 }
