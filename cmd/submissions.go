@@ -112,7 +112,9 @@ func watchSubmissions(client *api.Client, formID string, interval time.Duration,
 					seen[s.ID] = true
 				}
 
-				enc.Encode(s)
+				if err := enc.Encode(s); err != nil {
+					fmt.Fprintf(os.Stderr, "encode error: %v\n", err)
+				}
 
 				// Update checkpoint
 				if useCheckpoint && cp != nil {

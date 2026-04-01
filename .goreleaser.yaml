@@ -31,19 +31,8 @@ archives:
 checksum:
   name_template: "checksums.txt"
 
-brews:
-  - name: jotform
-    repository:
-      owner: jotform
-      name: homebrew-tap
-    description: "AI-native Jotform CLI for developers and AI agents"
-    homepage: "https://github.com/zubeyralmaho/jotform-cli"
-    install: |
-      bin.install "jotform"
-      bin.install_symlink bin/"jotform" => "jf"
-    test: |
-      system "#{bin}/jotform", "version"
-      system "#{bin}/jf", "version"
+# NOTE: Homebrew publishing is temporarily disabled for stable GitHub Releases.
+# Re-enable after tap repository ownership/token are configured.
 
 changelog:
   sort: asc
