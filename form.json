@@ -1,0 +1,14 @@
+{
+  "questions": [
+    {
+      "type": "control_textbox",
+      "text": "Ad Soyad",
+      "name": "adSoyad"
+    },
+    {
+      "type": "control_email",
+      "text": "E-posta",
+      "name": "eposta"
+    }
+  ]
+}

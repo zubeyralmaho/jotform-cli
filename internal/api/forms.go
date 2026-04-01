@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"strconv"
 )
 
 type Form struct {
@@ -14,7 +16,31 @@ type Form struct {
 	Status  string `json:"status"`
 	Created string `json:"created_at"`
 	Updated string `json:"updated_at"`
-	Count   string `json:"count"`
+	Count   Count  `json:"count"`
+}
+
+// Count accepts both numeric and string count values returned by the API.
+type Count string
+
+func (c *Count) UnmarshalJSON(data []byte) error {
+	if len(data) == 0 || string(data) == "null" {
+		*c = ""
+		return nil
+	}
+
+	var s string
+	if err := json.Unmarshal(data, &s); err == nil {
+		*c = Count(s)
+		return nil
+	}
+
+	var n int64
+	if err := json.Unmarshal(data, &n); err == nil {
+		*c = Count(strconv.FormatInt(n, 10))
+		return nil
+	}
+
+	return fmt.Errorf("invalid count value: %s", string(data))
 }
 
 type FormProperties struct {
@@ -55,7 +81,11 @@ func (c *Client) CreateForm(schema map[string]interface{}) (*Form, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("API error %d", resp.StatusCode)
+		body, _ := io.ReadAll(resp.Body)
+		if resp.StatusCode == http.StatusUnauthorized {
+			return nil, fmt.Errorf("API error 401: unauthorized. Check API key permissions for form creation. Details: %s", string(body))
+		}
+		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
 	}
 
 	var apiResp apiResponse[Form]
