@@ -40,8 +40,10 @@ brews:
     homepage: "https://github.com/jotform/jotform-cli"
     install: |
       bin.install "jotform"
+      bin.install_symlink bin/"jotform" => "jf"
     test: |
       system "#{bin}/jotform", "version"
+      system "#{bin}/jf", "version"
 
 changelog:
   sort: asc
