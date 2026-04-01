@@ -76,22 +76,42 @@ func TestListForms_Empty(t *testing.T) {
 }
 
 func TestGetForm_Success(t *testing.T) {
+	seenBase := false
+	seenQuestions := false
+	seenProperties := false
+
 	_, client := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
-		assert.Contains(t, r.URL.Path, "/form/123")
-		_ = json.NewEncoder(w).Encode(apiResponse[FormProperties]{
-			ResponseCode: 200,
-			Content: FormProperties{
-				ID:    "123",
-				Title: "My Form",
-				Questions: map[string]interface{}{
+		switch r.URL.Path {
+		case "/form/123":
+			seenBase = true
+			_ = json.NewEncoder(w).Encode(apiResponse[FormProperties]{
+				ResponseCode: 200,
+				Content: FormProperties{ID: "123", Title: "My Form"},
+			})
+		case "/form/123/questions":
+			seenQuestions = true
+			_ = json.NewEncoder(w).Encode(apiResponse[map[string]interface{}]{
+				ResponseCode: 200,
+				Content: map[string]interface{}{
 					"1": map[string]interface{}{"type": "control_textbox", "text": "Name"},
 				},
-			},
-		})
+			})
+		case "/form/123/properties":
+			seenProperties = true
+			_ = json.NewEncoder(w).Encode(apiResponse[map[string]interface{}]{
+				ResponseCode: 200,
+				Content: map[string]interface{}{"title": "My Form"},
+			})
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
 	})
 
 	form, err := client.GetForm("123")
 	require.NoError(t, err)
 	assert.Equal(t, "My Form", form.Title)
 	assert.NotEmpty(t, form.Questions)
+	assert.True(t, seenBase)
+	assert.True(t, seenQuestions)
+	assert.True(t, seenProperties)
 }

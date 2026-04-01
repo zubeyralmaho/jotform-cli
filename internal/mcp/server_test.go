@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	mcpgo "github.com/mark3labs/mcp-go/mcp"
@@ -116,17 +117,30 @@ func TestHandleCreateForm_InvalidJSON(t *testing.T) {
 }
 
 func TestHandleUpdateForm(t *testing.T) {
+	seenProperties := false
+	seenQuestions := false
+	seenGet := false
+
 	client := newTestAPI(t, func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, http.MethodPut, r.Method)
-		assert.Contains(t, r.URL.Path, "/form/777")
-		_ = json.NewEncoder(w).Encode(map[string]any{
-			"responseCode": 200,
-			"content": map[string]any{
-				"id":    "777",
-				"title": "Updated Form",
-				"url":   "https://form.jotform.com/777",
-			},
-		})
+		switch {
+		case r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/form/777/properties"):
+			seenProperties = true
+			_ = json.NewEncoder(w).Encode(map[string]any{"responseCode": 200, "content": map[string]any{}})
+		case r.Method == http.MethodPut && strings.Contains(r.URL.Path, "/form/777/questions"):
+			seenQuestions = true
+			_ = json.NewEncoder(w).Encode(map[string]any{"responseCode": 200, "content": map[string]any{}})
+		case r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/form/777"):
+			seenGet = true
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"responseCode": 200,
+				"content": map[string]any{
+					"id":    "777",
+					"title": "Updated Form",
+				},
+			})
+		default:
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
 	})
 
 	schema := `{"questions":{"1":{"type":"control_textbox","text":"Updated Name"}},"properties":{"title":"Updated Form"}}`
@@ -141,6 +155,9 @@ func TestHandleUpdateForm(t *testing.T) {
 	text := mcpgo.GetTextFromContent(result.Content)
 	assert.Contains(t, text, "777")
 	assert.Contains(t, text, "Updated Form")
+	assert.True(t, seenProperties)
+	assert.True(t, seenQuestions)
+	assert.True(t, seenGet)
 }
 
 func TestHandleUpdateForm_MissingID(t *testing.T) {

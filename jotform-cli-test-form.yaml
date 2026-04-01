@@ -1,0 +1,63 @@
+title: "Jotform CLI Product Feedback"
+properties:
+  title: "Jotform CLI Product Feedback"
+questions:
+  "1":
+    type: control_head
+    text: "Jotform CLI Product Feedback"
+    order: "1"
+  "2":
+    type: control_textbox
+    text: "Your Name"
+    name: your_name
+    order: "2"
+    required: "No"
+  "3":
+    type: control_email
+    text: "Your Email"
+    name: your_email
+    order: "3"
+    required: "No"
+  "4":
+    type: control_radio
+    text: "How would you rate the overall Jotform CLI experience?"
+    name: overall_rating
+    order: "4"
+    required: "Yes"
+    options: "Excellent|Good|Average|Needs Improvement"
+  "5":
+    type: control_checkbox
+    text: "Which Jotform CLI capabilities do you use most?"
+    name: most_used_features
+    order: "5"
+    required: "Yes"
+    options: "Forms CRUD|Project Context (init/status/diff)|Dashboard|Submissions Watch|AI Generate/Analyze|MCP Server"
+  "6":
+    type: control_dropdown
+    text: "How easy is setup and authentication?"
+    name: setup_experience
+    order: "6"
+    required: "Yes"
+    options: "Very Easy|Easy|Neutral|Difficult|Very Difficult"
+  "7":
+    type: control_textarea
+    text: "What is the most valuable part of Jotform CLI for your workflow?"
+    name: top_value
+    order: "7"
+    required: "Yes"
+  "8":
+    type: control_textarea
+    text: "Which command or flow needs the most improvement?"
+    name: improvement_area
+    order: "8"
+    required: "Yes"
+  "9":
+    type: control_textarea
+    text: "If you use AI agents, how useful is Jotform CLI for agent-driven workflows?"
+    name: ai_agent_usefulness
+    order: "9"
+    required: "No"
+  "10":
+    type: control_button
+    text: "Submit"
+    order: "10"
