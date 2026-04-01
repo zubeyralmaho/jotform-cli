@@ -445,7 +445,7 @@ func (m dashboardModel) renderQuestions(width int) string {
 		if count >= 12 {
 			remaining := questionCount - 12
 			if remaining > 0 {
-				sb.WriteString(ui.Muted.Render(fmt.Sprintf("  ... and %d more", remaining)))
+				_, _ = fmt.Fprintf(&sb, "%s", ui.Muted.Render(fmt.Sprintf("  ... and %d more", remaining)))
 			}
 			break
 		}
@@ -455,10 +455,10 @@ func (m dashboardModel) renderQuestions(width int) string {
 			if len(qText) > width-20 {
 				qText = qText[:width-23] + "..."
 			}
-			sb.WriteString(fmt.Sprintf("  %s  %s\n",
+			_, _ = fmt.Fprintf(&sb, "  %s  %s\n",
 				ui.Subtitle.Render(qType),
 				ui.Muted.Render(qText),
-			))
+			)
 		}
 		count++
 	}
@@ -488,10 +488,10 @@ func (m dashboardModel) renderSubmissions(width int) string {
 		if len(subID) > 14 {
 			subID = subID[:14] + "..."
 		}
-		sb.WriteString(fmt.Sprintf("  %s  %s\n",
+		_, _ = fmt.Fprintf(&sb, "  %s  %s\n",
 			ui.Value.Render(subID),
 			ui.Muted.Render(s.CreatedAt),
-		))
+		)
 	}
 
 	if len(m.subs) > limit {

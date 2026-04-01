@@ -193,12 +193,12 @@ func renderFlags(cmd *cobra.Command) string {
 		if f.DefValue != "" && f.DefValue != "false" {
 			defVal = Muted.Render(fmt.Sprintf(" (default: %s)", f.DefValue))
 		}
-		b.WriteString(fmt.Sprintf("    %s%s  %s%s\n",
+		_, _ = fmt.Fprintf(&b, "    %s%s  %s%s\n",
 			flagStyle.Render(shorthand),
 			flagStyle.Render(name),
 			Muted.Render(f.Usage),
 			defVal,
-		))
+		)
 	})
 
 	return b.String()
