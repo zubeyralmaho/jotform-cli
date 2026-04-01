@@ -24,7 +24,11 @@ func newClient() (*api.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return api.New(key), nil
+	c := api.New(key)
+	if base := viper.GetString("base_url"); base != "" {
+		c.BaseURL = base
+	}
+	return c, nil
 }
 
 // getAnthropicKey returns the Anthropic API key from config or env.

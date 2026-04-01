@@ -95,6 +95,38 @@ func (c *Client) CreateForm(schema map[string]interface{}) (*Form, error) {
 	return &apiResp.Content, nil
 }
 
+func (c *Client) UpdateForm(id string, schema map[string]interface{}) (*Form, error) {
+	body, err := json.Marshal(schema)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut,
+		fmt.Sprintf("%s/form/%s?apiKey=%s", c.BaseURL, id, c.APIKey),
+		bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	var apiResp apiResponse[Form]
+	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
+		return nil, err
+	}
+	return &apiResp.Content, nil
+}
+
 func (c *Client) DeleteForm(id string) error {
 	req, err := http.NewRequest(http.MethodDelete,
 		fmt.Sprintf("%s/form/%s?apiKey=%s", c.BaseURL, id, c.APIKey), nil)

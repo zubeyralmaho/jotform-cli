@@ -28,8 +28,10 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default: ~/.config/jotform/config.yaml)")
 	rootCmd.PersistentFlags().String("api-key", "", "Jotform API key (overrides keychain)")
+	rootCmd.PersistentFlags().String("base-url", "", "Jotform API base URL (default: https://api.jotform.com)")
 	rootCmd.PersistentFlags().String("output", "table", "Output format: table | json | yaml")
 	viper.BindPFlag("api_key", rootCmd.PersistentFlags().Lookup("api-key"))
+	viper.BindPFlag("base_url", rootCmd.PersistentFlags().Lookup("base-url"))
 	viper.BindPFlag("output", rootCmd.PersistentFlags().Lookup("output"))
 }
 
