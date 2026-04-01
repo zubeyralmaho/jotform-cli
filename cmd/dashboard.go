@@ -248,7 +248,7 @@ func (m dashboardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "o":
 			if m.phase == dashPhaseReady && len(m.forms) > 0 {
 				formURL := fmt.Sprintf("https://form.jotform.com/%s", m.forms[m.selected].ID)
-				openBrowser(formURL)
+				_ = openBrowser(formURL)
 			}
 		}
 

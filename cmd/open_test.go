@@ -60,7 +60,7 @@ func TestRunOpenWithProjectContext(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get current directory: %v", err)
 	}
-	defer os.Chdir(originalDir)
+	defer func() { _ = os.Chdir(originalDir) }()
 	
 	// Change to temp directory
 	if err := os.Chdir(tmpDir); err != nil {
@@ -104,7 +104,7 @@ func TestRunOpenWithoutContext(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get current directory: %v", err)
 	}
-	defer os.Chdir(originalDir)
+	defer func() { _ = os.Chdir(originalDir) }()
 	
 	// Change to temp directory
 	if err := os.Chdir(tmpDir); err != nil {
@@ -166,7 +166,7 @@ func TestExplicitFormIDOverridesContext(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get current directory: %v", err)
 	}
-	defer os.Chdir(originalDir)
+	defer func() { _ = os.Chdir(originalDir) }()
 	
 	// Change to temp directory
 	if err := os.Chdir(tmpDir); err != nil {
@@ -206,7 +206,7 @@ func TestOpenCommandIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get current directory: %v", err)
 	}
-	defer os.Chdir(originalDir)
+	defer func() { _ = os.Chdir(originalDir) }()
 	
 	// Change to temp directory
 	if err := os.Chdir(tmpDir); err != nil {

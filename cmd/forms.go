@@ -297,7 +297,9 @@ var formsSyncCmd = &cobra.Command{
 			}
 			b, _ := json.MarshalIndent(props, "", "  ")
 			path := fmt.Sprintf("%s/%s.json", dir, f.ID)
-			os.WriteFile(path, b, 0644)
+			if err := os.WriteFile(path, b, 0644); err != nil {
+				fmt.Fprintf(os.Stderr, "skipping write %s: %v\n", path, err)
+			}
 		}
 		fmt.Printf("Synced %d forms to %s\n", len(forms), dir)
 		return nil
