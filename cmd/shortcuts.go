@@ -101,15 +101,6 @@ var shortWatchCmd = &cobra.Command{
 	RunE:  runSubmissionsWatch,
 }
 
-// ── Share shortcut ──────────────────────────────────────────────────────
-
-var shortShareCmd = &cobra.Command{
-	Use:   "share [form-id]",
-	Short: "Display form URL and QR code for sharing",
-	Args:  cobra.MaximumNArgs(1),
-	RunE:  runShare,
-}
-
 // ── AI shortcut ─────────────────────────────────────────────────────────
 
 var shortGenerateCmd = &cobra.Command{
@@ -172,7 +163,6 @@ func init() {
 		shortDiffCmd,
 		shortStatusCmd,
 		shortWatchCmd,
-		shortShareCmd,
 		shortGenerateCmd,
 	)
 }

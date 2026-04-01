@@ -158,9 +158,9 @@ import (
     "fmt"
     "os"
 
-    "github.com/jotform/jotform-cli/internal/api"
-    "github.com/jotform/jotform-cli/internal/auth"
-    "github.com/jotform/jotform-cli/internal/output"
+    "github.com/zubeyralmaho/jotform-cli/internal/api"
+    "github.com/zubeyralmaho/jotform-cli/internal/auth"
+    "github.com/zubeyralmaho/jotform-cli/internal/output"
     "github.com/spf13/cobra"
     "github.com/spf13/viper"
 )

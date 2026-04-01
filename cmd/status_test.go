@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jotform/jotform-cli/internal/formcode"
+	"github.com/zubeyralmaho/jotform-cli/internal/formcode"
 )
 
 func TestFormatRelativeTime(t *testing.T) {

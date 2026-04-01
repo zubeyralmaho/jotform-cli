@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/jotform/jotform-cli/internal/ai"
-	"github.com/jotform/jotform-cli/internal/api"
+	"github.com/zubeyralmaho/jotform-cli/internal/ai"
+	"github.com/zubeyralmaho/jotform-cli/internal/api"
 	mcpgo "github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )

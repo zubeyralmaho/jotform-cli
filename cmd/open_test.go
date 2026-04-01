@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jotform/jotform-cli/internal/config"
+	"github.com/zubeyralmaho/jotform-cli/internal/config"
 )
 
 // TestIsValidFormID tests form ID validation

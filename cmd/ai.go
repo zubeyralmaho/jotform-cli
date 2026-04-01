@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/jotform/jotform-cli/internal/ai"
-	"github.com/jotform/jotform-cli/internal/ui"
+	"github.com/zubeyralmaho/jotform-cli/internal/ai"
+	"github.com/zubeyralmaho/jotform-cli/internal/ui"
 	"github.com/spf13/cobra"
 )
 

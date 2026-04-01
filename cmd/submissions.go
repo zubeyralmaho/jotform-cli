@@ -6,11 +6,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/jotform/jotform-cli/internal/api"
-	"github.com/jotform/jotform-cli/internal/config"
-	"github.com/jotform/jotform-cli/internal/output"
-	"github.com/jotform/jotform-cli/internal/ui"
-	"github.com/jotform/jotform-cli/internal/watch"
+	"github.com/zubeyralmaho/jotform-cli/internal/api"
+	"github.com/zubeyralmaho/jotform-cli/internal/config"
+	"github.com/zubeyralmaho/jotform-cli/internal/output"
+	"github.com/zubeyralmaho/jotform-cli/internal/ui"
+	"github.com/zubeyralmaho/jotform-cli/internal/watch"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

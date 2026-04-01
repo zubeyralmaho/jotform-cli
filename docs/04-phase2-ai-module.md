@@ -148,7 +148,7 @@ import (
     "fmt"
     "os"
 
-    "github.com/jotform/jotform-cli/internal/ai"
+    "github.com/zubeyralmaho/jotform-cli/internal/ai"
     "github.com/spf13/cobra"
     "github.com/spf13/viper"
 )

@@ -2,64 +2,142 @@
 	<img src="assets/jotform-logo.png" alt="Jotform CLI logo" width="760" />
 </p>
 
-# Jotform CLI: The AI-Native Data Collection Layer
+# Jotform CLI
 
-## 1. Executive Summary
-The software landscape is shifting from Graphical User Interfaces (GUI) to **Agentic Workflows**. Developers and AI Agents (such as **Claude Code**, **OpenAI Operator**, and **GitHub Copilot**) require a high-velocity, terminal-based interface to create, manage, and deploy data collection points.
+Form-as-Code CLI for creating, managing, and inspecting Jotform forms from the terminal.
 
-The **Jotform CLI** is designed to transform Jotform from a "No-Code Form Builder" into a core **Developer Infrastructure Component**, enabling seamless integration into CI/CD pipelines and autonomous AI environments via the **Model Context Protocol (MCP)**.
+## What It Does
 
----
+- Manage authentication with system keychain or `--api-key`
+- List, get, create, update, delete, diff, status, export, import, sync, and apply forms
+- Initialize project context with `.jotform.yaml`
+- Clone a form into a new project directory
+- Generate form schemas with AI
+- Open forms in a browser or use the built-in MCP server
+- Show a branded terminal UI with logo and help screens
 
-## 2. Core Pillars
+## Install
 
-### A. AI-Agent Compatibility (The "Agentic" Layer)
-* **MCP Server Integration:** A built-in Model Context Protocol server that allows **Claude Desktop** and other LLMs to "see" Jotform as a native tool in their environment.
-* **Prompt-to-Form:** A command-driven engine where an agent can execute `jotform ai generate "Survey for Sür app users"` and receive a validated Jotform JSON schema.
-* **Headless Deployment:** Enabling agents to deploy and update forms instantly using `jotform deploy --schema`.
+### Go install
 
-### B. Developer Experience (DX) & CI/CD
-* **Form-as-Code (FaC):** Export and import form definitions as **YAML/JSON**. This allows developers to version-control their forms in Git, enabling "Rollbacks" and "Pull Request" reviews for form logic changes.
-* **Single Binary (Go-based):** Built with Golang for zero-dependency installation across macOS, Linux, and Windows.
-* **Submission Stream:** Pipe form submissions directly into other CLI tools or local databases (e.g., `jotform submissions --watch | jq .`).
+```bash
+go install github.com/zubeyralmaho/jotform-cli@latest
+```
 
-### C. Open Source Strategy
-* **Community-Driven:** The CLI core will be Open Source to build trust within the developer community and ensure security transparency for API key management.
-* **Extensibility:** A plugin architecture that allows the community to build custom "Formatters" (e.g., exporting Jotform data directly into Supabase, Firebase, or PostgreSQL).
+### Build from source
 
----
+```bash
+git clone https://github.com/zubeyralmaho/jotform-cli.git
+cd jotform-cli
+make build
+```
 
-## 3. Technical Architecture & Command Mapping
+## Quick Start
 
-### Module 1: `jotform auth`
-* `login / logout`: Securely manage API Keys using system keychains.
-* `whoami`: Verify account status and API usage limits.
+```bash
+jotform auth login
+jotform forms list
+jotform init
+jotform clone 242753193847060
+```
 
-### Module 2: `jotform forms` (The Infrastructure Layer)
-* `list`: List all active forms with metadata.
-* `get [id] --format json`: Fetch form structure for local editing.
-* `create --file [path]`: Deploy a new form from a local definition file.
-* `sync`: Pull remote form changes to local version-controlled files.
+If you already have a project context, you can work without repeating the form ID:
 
-### Module 3: `jotform ai` (The AI Bridge)
-* `generate-schema "[prompt]"`: Uses LLM reasoning to output a valid Jotform-compatible JSON structure.
-* `analyze [id]`: Feeds form structure to an agent to suggest UX improvements or logic optimizations.
+```bash
+jotform status
+jotform diff
+jotform push
+jotform pull
+```
 
-### Module 4: `jotform mcp`
-* `start-server`: Launches the MCP server, exposing `create_form`, `list_forms`, and `get_submissions` as tools for **Claude Code**.
+## Command Overview
 
----
+### Core
 
-## 4. Strategic Impact for Jotform
+| Command | Description |
+|---|---|
+| `jotform auth login` | Store your API key securely |
+| `jotform auth logout` | Remove stored credentials |
+| `jotform auth whoami` | Show the current account |
+| `jotform forms list` | List all forms |
+| `jotform forms get [form-id]` | Fetch a form |
+| `jotform forms create --file <file>` | Create a form from JSON or YAML |
+| `jotform forms update [form-id] --file <file>` | Update a form from a local file |
+| `jotform forms delete [form-id]` | Delete a form |
+| `jotform forms sync` | Download all forms to `~/.jotform/` |
+| `jotform forms export [form-id]` | Export a form to a local file |
+| `jotform forms import` | Import a local form file |
+| `jotform forms diff [form-id]` | Compare local and remote form state |
+| `jotform forms status [form-id]` | Show local vs remote differences |
+| `jotform forms apply [form-id]` | Apply local changes to a remote form |
+| `jotform submissions list [form-id]` | List recent submissions |
+| `jotform submissions watch [form-id]` | Stream new submissions |
 
-1.  **First-Mover Advantage:** By releasing an MCP-compliant CLI, Jotform becomes the *de facto* data collection tool for the millions of developers moving to AI-assisted coding.
-2.  **Enterprise Adoption:** Version-controlling forms (Form-as-Code) solves a major pain point for engineering teams (like those at **İmarAnaliz**) who require audit trails for form changes.
-3.  **Ecosystem Expansion:** Transitioning from a SaaS product to a "Developer Utility" increases "stickiness" and reduces churn among technical users.
+### Workflow
 
----
+| Command | Description |
+|---|---|
+| `jotform init` | Create `.jotform.yaml` project context |
+| `jotform clone [form-id]` | Clone a form into a new directory |
+| `jotform open [form-id]` | Open a form in the browser |
+| `jotform status` | Show local and remote differences |
+| `jotform diff` | Compare local schema with the remote form |
+| `jotform push` | Apply local changes |
+| `jotform pull` | Download the latest remote form |
 
-## 5. Roadmap
-* **Phase 1:** Core Go-based CLI (Auth, CRUD, JSON Export/Import).
-* **Phase 2:** AI-Link for `generate-schema` functionality.
-* **Phase 3:** **Model Context Protocol (MCP)** implementation for Claude/Agent integration.
-* **Phase 4:** Official Open Source release and developer outreach.
+### AI and MCP
+
+| Command | Description |
+|---|---|
+| `jotform ai generate-schema "..."` | Generate a form schema from a prompt |
+| `jotform ai analyze [form-id]` | Get AI suggestions for an existing form |
+| `jotform mcp start-server` | Start the MCP server over stdio |
+
+### Other
+
+| Command | Description |
+|---|---|
+| `jotform dashboard` | Open the interactive dashboard |
+| `jotform share` | Display the form URL and QR code |
+| `jotform version` | Print version information |
+
+## Configuration
+
+Global flags:
+
+```bash
+--config   Path to config file (default: ~/.config/jotform/config.yaml)
+--api-key  Jotform API key (overrides keychain)
+--base-url Jotform API base URL
+--output   Output format: table | json | yaml
+```
+
+Environment variables use the `JOTFORM_` prefix:
+
+- `JOTFORM_API_KEY`
+- `JOTFORM_BASE_URL`
+
+## Project Context
+
+`jotform init` creates a `.jotform.yaml` file that stores:
+
+- `form_id`
+- `name`
+- `schema`
+
+This lets commands like `jotform status`, `jotform diff`, `jotform push`, and `jotform pull` work without repeating the form ID or file path.
+
+## Development
+
+```bash
+go test ./...
+go run . --help
+make build
+make test
+```
+
+## Notes
+
+- The CLI includes a branded terminal logo and help output.
+- Shell completions are available via `jotform completion`.
+- The MCP server is intended for Claude Desktop, Claude Code, and other MCP-compatible tools.

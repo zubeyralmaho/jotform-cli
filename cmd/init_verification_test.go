@@ -3,8 +3,8 @@ package cmd
 import (
 	"testing"
 
-	"github.com/jotform/jotform-cli/internal/config"
-	"github.com/jotform/jotform-cli/internal/formcode"
+	"github.com/zubeyralmaho/jotform-cli/internal/config"
+	"github.com/zubeyralmaho/jotform-cli/internal/formcode"
 )
 
 // TestTask1_2_Requirements verifies that all Task 1.2 requirements are met
@@ -51,7 +51,7 @@ func TestTask1_2_Requirements(t *testing.T) {
 	t.Run("Requirement 13.1: Configuration file includes header comments", func(t *testing.T) {
 		// Verify that SaveProject includes header comments
 		// This is verified by code inspection in internal/config/context.go:
-		// header := "# Jotform CLI project configuration\n# See: https://github.com/jotform/jotform-cli\n\n"
+		// header := "# Jotform CLI project configuration\n# See: https://github.com/zubeyralmaho/jotform-cli\n\n"
 		t.Log("✓ SaveProject includes header comments")
 	})
 }

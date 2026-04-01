@@ -276,7 +276,7 @@ type ProjectConfig struct {
 **File Format Example**:
 ```yaml
 # Jotform CLI project configuration
-# See: https://github.com/jotform/jotform-cli
+# See: https://github.com/zubeyralmaho/jotform-cli
 
 form_id: "242753193847060"
 name: "Contact Form"
@@ -1403,9 +1403,9 @@ properties.Property("Slugify produces filesystem-safe names", prop.ForAll(
 - **github.com/spf13/cobra** - CLI framework for command structure and flag parsing
 - **github.com/spf13/viper** - Configuration management
 - **gopkg.in/yaml.v3** - YAML parsing for `.jotform.yaml` and schema files
-- **github.com/jotform/jotform-cli/internal/api** - Jotform API client
-- **github.com/jotform/jotform-cli/internal/config** - Context resolution (already implemented)
-- **github.com/jotform/jotform-cli/internal/formcode** - Form schema codec and diff
+- **github.com/zubeyralmaho/jotform-cli/internal/api** - Jotform API client
+- **github.com/zubeyralmaho/jotform-cli/internal/config** - Context resolution (already implemented)
+- **github.com/zubeyralmaho/jotform-cli/internal/formcode** - Form schema codec and diff
 
 ### New Dependencies Required
 

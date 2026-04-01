@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/jotform/jotform-cli/internal/ui"
+	"github.com/zubeyralmaho/jotform-cli/internal/ui"
 	"github.com/spf13/cobra"
 )
 

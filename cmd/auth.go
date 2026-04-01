@@ -8,9 +8,9 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/jotform/jotform-cli/internal/api"
-	"github.com/jotform/jotform-cli/internal/auth"
-	"github.com/jotform/jotform-cli/internal/ui"
+	"github.com/zubeyralmaho/jotform-cli/internal/api"
+	"github.com/zubeyralmaho/jotform-cli/internal/auth"
+	"github.com/zubeyralmaho/jotform-cli/internal/ui"
 	"github.com/spf13/cobra"
 )
 

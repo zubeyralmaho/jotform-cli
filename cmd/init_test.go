@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jotform/jotform-cli/internal/config"
+	"github.com/zubeyralmaho/jotform-cli/internal/config"
 )
 
 // TestInitExistingFormLogic tests the core logic of initExistingForm

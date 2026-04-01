@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/jotform/jotform-cli/internal/ai"
-	mcpserver "github.com/jotform/jotform-cli/internal/mcp"
+	"github.com/zubeyralmaho/jotform-cli/internal/ai"
+	mcpserver "github.com/zubeyralmaho/jotform-cli/internal/mcp"
 	"github.com/spf13/cobra"
 )
 

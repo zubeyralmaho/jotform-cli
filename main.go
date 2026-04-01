@@ -1,6 +1,6 @@
 package main
 
-import "github.com/jotform/jotform-cli/cmd"
+import "github.com/zubeyralmaho/jotform-cli/cmd"
 
 func main() {
 	cmd.Execute()

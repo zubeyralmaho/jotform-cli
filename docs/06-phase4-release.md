@@ -40,9 +40,9 @@ func init() {
 
 Build with version info:
 ```bash
-go build -ldflags="-X 'github.com/jotform/jotform-cli/cmd.Version=v1.0.0' \
-  -X 'github.com/jotform/jotform-cli/cmd.Commit=$(git rev-parse --short HEAD)' \
-  -X 'github.com/jotform/jotform-cli/cmd.BuildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)'" \
+go build -ldflags="-X 'github.com/zubeyralmaho/jotform-cli/cmd.Version=v1.0.0' \
+  -X 'github.com/zubeyralmaho/jotform-cli/cmd.Commit=$(git rev-parse --short HEAD)' \
+  -X 'github.com/zubeyralmaho/jotform-cli/cmd.BuildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)'" \
   -o jotform .
 ```
 
@@ -71,9 +71,9 @@ builds:
       - arm64
     ldflags:
       - -s -w
-      - -X github.com/jotform/jotform-cli/cmd.Version={{.Version}}
-      - -X github.com/jotform/jotform-cli/cmd.Commit={{.Commit}}
-      - -X github.com/jotform/jotform-cli/cmd.BuildDate={{.Date}}
+      - -X github.com/zubeyralmaho/jotform-cli/cmd.Version={{.Version}}
+      - -X github.com/zubeyralmaho/jotform-cli/cmd.Commit={{.Commit}}
+      - -X github.com/zubeyralmaho/jotform-cli/cmd.BuildDate={{.Date}}
 
 archives:
   - format: tar.gz
@@ -91,7 +91,7 @@ brews:
       owner: jotform
       name: homebrew-tap
     description: "AI-native Jotform CLI for developers and AI agents"
-    homepage: "https://github.com/jotform/jotform-cli"
+    homepage: "https://github.com/zubeyralmaho/jotform-cli"
     install: |
       bin.install "jotform"
     test: |
@@ -194,12 +194,12 @@ brew install jotform/tap/jotform
 
 **Direct download (any platform)**
 ```bash
-curl -sSL https://github.com/jotform/jotform-cli/releases/latest/download/install.sh | sh
+curl -sSL https://github.com/zubeyralmaho/jotform-cli/releases/latest/download/install.sh | sh
 ```
 
 **Go install**
 ```bash
-go install github.com/jotform/jotform-cli@latest
+go install github.com/zubeyralmaho/jotform-cli@latest
 ```
 
 ---

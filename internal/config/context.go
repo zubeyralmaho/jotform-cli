@@ -61,7 +61,7 @@ func SaveProject(cfg *ProjectConfig, dir string) error {
 		return err
 	}
 
-	header := "# Jotform CLI project configuration\n# See: https://github.com/jotform/jotform-cli\n\n"
+	header := "# Jotform CLI project configuration\n# See: https://github.com/zubeyralmaho/jotform-cli\n\n"
 	path := filepath.Join(dir, ProjectFileName)
 	return os.WriteFile(path, []byte(header+string(data)), 0644)
 }

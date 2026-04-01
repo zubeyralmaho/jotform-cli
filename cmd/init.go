@@ -7,9 +7,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/jotform/jotform-cli/internal/config"
-	"github.com/jotform/jotform-cli/internal/formcode"
-	"github.com/jotform/jotform-cli/internal/ui"
+	"github.com/zubeyralmaho/jotform-cli/internal/config"
+	"github.com/zubeyralmaho/jotform-cli/internal/formcode"
+	"github.com/zubeyralmaho/jotform-cli/internal/ui"
 	"github.com/spf13/cobra"
 )
 

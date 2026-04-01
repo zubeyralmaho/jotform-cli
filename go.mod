@@ -1,4 +1,4 @@
-module github.com/jotform/jotform-cli
+module github.com/zubeyralmaho/jotform-cli
 
 go 1.26.1
 

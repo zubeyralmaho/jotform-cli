@@ -12,7 +12,7 @@
 ```bash
 mkdir jotform-cli && cd jotform-cli
 git init
-go mod init github.com/jotform/jotform-cli
+go mod init github.com/zubeyralmaho/jotform-cli
 ```
 
 ---
@@ -45,7 +45,7 @@ go get github.com/stretchr/testify@latest
 ```go
 package main
 
-import "github.com/jotform/jotform-cli/cmd"
+import "github.com/zubeyralmaho/jotform-cli/cmd"
 
 func main() {
     cmd.Execute()

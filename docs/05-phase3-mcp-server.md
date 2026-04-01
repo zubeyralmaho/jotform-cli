@@ -38,8 +38,8 @@ import (
     "encoding/json"
     "fmt"
 
-    "github.com/jotform/jotform-cli/internal/ai"
-    "github.com/jotform/jotform-cli/internal/api"
+    "github.com/zubeyralmaho/jotform-cli/internal/ai"
+    "github.com/zubeyralmaho/jotform-cli/internal/api"
     mcpgo "github.com/mark3labs/mcp-go/mcp"
     "github.com/mark3labs/mcp-go/server"
 )
@@ -203,8 +203,8 @@ func (s *Server) handleGenerateSchema(ctx context.Context, req mcpgo.CallToolReq
 package cmd
 
 import (
-    "github.com/jotform/jotform-cli/internal/ai"
-    "github.com/jotform/jotform-cli/internal/mcp"
+    "github.com/zubeyralmaho/jotform-cli/internal/ai"
+    "github.com/zubeyralmaho/jotform-cli/internal/mcp"
     "github.com/spf13/cobra"
 )
 
