@@ -19,16 +19,16 @@ type commandGroup struct {
 // categorizeCommands groups subcommands into logical sections.
 func categorizeCommands(cmd *cobra.Command) []commandGroup {
 	groups := map[string][]*cobra.Command{
-		"Core":      {},
-		"Workflow":  {},
+		"Core":     {},
+		"Workflow": {},
 		"AI":       {},
-		"Other":     {},
+		"Other":    {},
 	}
 
 	// Map command names to groups
 	coreNames := map[string]bool{
 		"dashboard": true,
-		"auth": true, "login": true, "logout": true, "whoami": true,
+		"auth":      true, "login": true, "logout": true, "whoami": true,
 		"forms": true, "ls": true, "list": true, "get": true,
 		"new": true, "create": true, "rm": true, "delete": true,
 		"submissions": true, "watch": true,

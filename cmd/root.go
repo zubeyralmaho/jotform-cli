@@ -44,8 +44,11 @@ func init() {
 // initAPIKeyCache pre-loads the API key into cache at app startup to avoid
 // repeated keychain prompts during command execution
 func initAPIKeyCache() {
-	// Ignore errors - API key might not be in keychain yet
-	resolveAPIKey()
+	// Only attempt to load if not already provided via flag or env
+	if viper.GetString("api_key") == "" {
+		// Ignore errors - API key might not be in keychain yet on first login
+		resolveAPIKey()
+	}
 }
 
 func initConfig() {

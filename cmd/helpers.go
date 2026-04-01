@@ -7,9 +7,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/spf13/viper"
 	"github.com/zubeyralmaho/jotform-cli/internal/api"
 	"github.com/zubeyralmaho/jotform-cli/internal/auth"
-	"github.com/spf13/viper"
 )
 
 var (

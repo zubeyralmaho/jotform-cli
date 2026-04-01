@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/99designs/keyring"
 )
@@ -12,8 +13,34 @@ const (
 	keyName     = "api-key"
 )
 
+var (
+	cachedKeyring keyring.Keyring
+	keyringMu     sync.Mutex
+)
+
+// getKeyring returns a cached keyring instance to avoid multiple macOS permission prompts
+func getKeyring() (keyring.Keyring, error) {
+	keyringMu.Lock()
+	defer keyringMu.Unlock()
+
+	if cachedKeyring != nil {
+		return cachedKeyring, nil
+	}
+
+	ring, err := keyring.Open(keyring.Config{
+		ServiceName:              serviceName,
+		KeychainTrustApplication: false,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	cachedKeyring = ring
+	return ring, nil
+}
+
 func SaveAPIKey(key string) error {
-	ring, err := openKeyring()
+	ring, err := getKeyring()
 	if err != nil {
 		return err
 	}
@@ -21,7 +48,7 @@ func SaveAPIKey(key string) error {
 }
 
 func LoadAPIKey() (string, error) {
-	ring, err := openKeyring()
+	ring, err := getKeyring()
 	if err != nil {
 		return "", err
 	}
@@ -36,16 +63,9 @@ func LoadAPIKey() (string, error) {
 }
 
 func DeleteAPIKey() error {
-	ring, err := openKeyring()
+	ring, err := getKeyring()
 	if err != nil {
 		return err
 	}
 	return ring.Remove(keyName)
-}
-
-func openKeyring() (keyring.Keyring, error) {
-	return keyring.Open(keyring.Config{
-		ServiceName:              serviceName,
-		KeychainTrustApplication: false,
-	})
 }

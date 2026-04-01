@@ -71,19 +71,19 @@ const (
 )
 
 type dashboardModel struct {
-	client   *api.Client
-	phase    dashPhase
-	spinner  spinner.Model
-	forms    []api.Form
-	selected int
-	detail   *api.FormProperties
-	subs     []api.Submission
-	screen   dashScreen
-	history  []dashScreen
+	client       *api.Client
+	phase        dashPhase
+	spinner      spinner.Model
+	forms        []api.Form
+	selected     int
+	detail       *api.FormProperties
+	subs         []api.Submission
+	screen       dashScreen
+	history      []dashScreen
 	openRootHelp bool
-	errMsg   string
-	width    int
-	height   int
+	errMsg       string
+	width        int
+	height       int
 }
 
 type dashFormsLoadedMsg struct{ forms []api.Form }
