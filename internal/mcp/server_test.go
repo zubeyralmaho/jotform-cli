@@ -7,10 +7,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/zubeyralmaho/jotform-cli/internal/api"
 	mcpgo "github.com/mark3labs/mcp-go/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/zubeyralmaho/jotform-cli/internal/api"
 )
 
 func newTestAPI(t *testing.T, handler http.HandlerFunc) *api.Client {
