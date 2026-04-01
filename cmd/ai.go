@@ -27,15 +27,21 @@ var aiGenerateCmd = &cobra.Command{
 			return fmt.Errorf("ANTHROPIC_API_KEY is required — set it via env or config")
 		}
 
-		gen := ai.NewGenerator(apiKey)
-		schema, err := gen.GenerateSchema(context.Background(), prompt)
+		gen := newAIGenerator(cmd, apiKey)
+
+		result, err := gen.GenerateSchema(context.Background(), prompt)
 		if err != nil {
 			return err
 		}
 
+		showUsage, _ := cmd.Flags().GetBool("show-usage")
+		if showUsage {
+			fmt.Fprintf(os.Stderr, "[tokens: in=%d out=%d]\n", result.Usage.InputTokens, result.Usage.OutputTokens)
+		}
+
 		outFile, _ := cmd.Flags().GetString("out")
 		if outFile != "" {
-			data, _ := json.MarshalIndent(schema, "", "  ")
+			data, _ := json.MarshalIndent(result.Schema, "", "  ")
 			if err := os.WriteFile(outFile, data, 0644); err != nil {
 				return err
 			}
@@ -45,7 +51,7 @@ var aiGenerateCmd = &cobra.Command{
 
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
-		return enc.Encode(schema)
+		return enc.Encode(result.Schema)
 	},
 }
 
@@ -73,18 +79,52 @@ var aiAnalyzeCmd = &cobra.Command{
 			"questions": form.Questions,
 		}
 
-		gen := ai.NewGenerator(apiKey)
-		suggestions, err := gen.AnalyzeForm(context.Background(), formMap)
+		gen := newAIGenerator(cmd, apiKey)
+		suggestions, usage, err := gen.AnalyzeForm(context.Background(), formMap)
 		if err != nil {
 			return err
 		}
 
 		fmt.Println(suggestions)
+
+		showUsage, _ := cmd.Flags().GetBool("show-usage")
+		if showUsage && usage != nil {
+			fmt.Fprintf(os.Stderr, "[tokens: in=%d out=%d]\n", usage.InputTokens, usage.OutputTokens)
+		}
 		return nil
 	},
 }
 
+// newAIGenerator creates an AI generator with options from command flags.
+func newAIGenerator(cmd *cobra.Command, apiKey string) *ai.Generator {
+	opts := ai.DefaultOptions()
+
+	if model, _ := cmd.Flags().GetString("model"); model != "" {
+		opts.Model = model
+	}
+	if maxTokens, _ := cmd.Flags().GetInt("max-tokens"); maxTokens > 0 {
+		opts.MaxTokens = maxTokens
+	}
+	if timeout, _ := cmd.Flags().GetDuration("timeout"); timeout > 0 {
+		opts.Timeout = timeout
+	}
+	if retries, _ := cmd.Flags().GetInt("max-retries"); retries >= 0 {
+		opts.MaxRetries = retries
+	}
+
+	return ai.NewGeneratorWithOptions(apiKey, opts)
+}
+
 func init() {
+	// AI sub-command shared flags
+	for _, cmd := range []*cobra.Command{aiGenerateCmd, aiAnalyzeCmd} {
+		cmd.Flags().String("model", "", "Anthropic model to use (default: claude-sonnet-4-5-20250514)")
+		cmd.Flags().Int("max-tokens", 0, "Maximum output tokens (default: 4096)")
+		cmd.Flags().Duration("timeout", 0, "Request timeout (default: 60s)")
+		cmd.Flags().Int("max-retries", -1, "Max retries on transient errors (default: 2)")
+		cmd.Flags().Bool("show-usage", false, "Show token usage after completion")
+	}
+
 	aiGenerateCmd.Flags().StringP("out", "o", "", "Write schema to file instead of stdout")
 	aiCmd.AddCommand(aiGenerateCmd, aiAnalyzeCmd)
 	rootCmd.AddCommand(aiCmd)

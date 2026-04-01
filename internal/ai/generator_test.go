@@ -46,10 +46,11 @@ func TestGenerateSchema_ValidJSON(t *testing.T) {
 
 	result, err := gen.GenerateSchema(context.Background(), "a feedback form")
 	require.NoError(t, err)
-	assert.Contains(t, result, "questions")
-	assert.Contains(t, result, "properties")
+	assert.Contains(t, result.Schema, "questions")
+	assert.Contains(t, result.Schema, "properties")
+	assert.Greater(t, result.Usage.InputTokens, 0)
 
-	props, ok := result["properties"].(map[string]any)
+	props, ok := result.Schema["properties"].(map[string]any)
 	require.True(t, ok)
 	assert.Equal(t, "Feedback Form", props["title"])
 }
@@ -61,7 +62,7 @@ func TestGenerateSchema_StripsMarkdownFences(t *testing.T) {
 
 	result, err := gen.GenerateSchema(context.Background(), "test form")
 	require.NoError(t, err)
-	assert.Contains(t, result, "properties")
+	assert.Contains(t, result.Schema, "properties")
 }
 
 func TestGenerateSchema_InvalidJSON(t *testing.T) {
@@ -85,8 +86,10 @@ func TestAnalyzeForm(t *testing.T) {
 		},
 	}
 
-	result, err := gen.AnalyzeForm(context.Background(), form)
+	result, usage, err := gen.AnalyzeForm(context.Background(), form)
 	require.NoError(t, err)
 	assert.Contains(t, result, "Missing email validation")
 	assert.Contains(t, result, "required fields")
+	assert.NotNil(t, usage)
+	assert.Greater(t, usage.InputTokens, 0)
 }

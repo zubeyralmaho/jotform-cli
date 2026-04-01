@@ -36,10 +36,12 @@ func (s *Server) Run() error {
 }
 
 func (s *Server) registerTools(srv *server.MCPServer) {
+	// ── LIST FORMS ──────────────────────────────────────────────────────
 	srv.AddTool(mcpgo.NewTool("list_forms",
 		mcpgo.WithDescription("List all Jotform forms for the authenticated account"),
 	), s.handleListForms)
 
+	// ── GET FORM ────────────────────────────────────────────────────────
 	srv.AddTool(mcpgo.NewTool("get_form",
 		mcpgo.WithDescription("Get the full structure (questions, properties) of a Jotform form"),
 		mcpgo.WithString("form_id",
@@ -48,6 +50,7 @@ func (s *Server) registerTools(srv *server.MCPServer) {
 		),
 	), s.handleGetForm)
 
+	// ── CREATE FORM ─────────────────────────────────────────────────────
 	srv.AddTool(mcpgo.NewTool("create_form",
 		mcpgo.WithDescription("Create a new Jotform form from a JSON schema"),
 		mcpgo.WithString("schema",
@@ -56,6 +59,38 @@ func (s *Server) registerTools(srv *server.MCPServer) {
 		),
 	), s.handleCreateForm)
 
+	// ── UPDATE FORM ─────────────────────────────────────────────────────
+	srv.AddTool(mcpgo.NewTool("update_form",
+		mcpgo.WithDescription("Update an existing Jotform form with a new JSON schema"),
+		mcpgo.WithString("form_id",
+			mcpgo.Required(),
+			mcpgo.Description("The numeric Jotform form ID to update"),
+		),
+		mcpgo.WithString("schema",
+			mcpgo.Required(),
+			mcpgo.Description("JSON string containing the updated Jotform form schema"),
+		),
+	), s.handleUpdateForm)
+
+	// ── DELETE FORM ─────────────────────────────────────────────────────
+	srv.AddTool(mcpgo.NewTool("delete_form",
+		mcpgo.WithDescription("Delete a Jotform form permanently"),
+		mcpgo.WithString("form_id",
+			mcpgo.Required(),
+			mcpgo.Description("The numeric Jotform form ID to delete"),
+		),
+	), s.handleDeleteForm)
+
+	// ── EXPORT FORM ─────────────────────────────────────────────────────
+	srv.AddTool(mcpgo.NewTool("export_form",
+		mcpgo.WithDescription("Export a Jotform form structure as formatted JSON for version control"),
+		mcpgo.WithString("form_id",
+			mcpgo.Required(),
+			mcpgo.Description("The numeric Jotform form ID to export"),
+		),
+	), s.handleExportForm)
+
+	// ── LIST SUBMISSIONS ────────────────────────────────────────────────
 	srv.AddTool(mcpgo.NewTool("list_submissions",
 		mcpgo.WithDescription("Retrieve recent submissions for a Jotform form"),
 		mcpgo.WithString("form_id",
@@ -67,6 +102,7 @@ func (s *Server) registerTools(srv *server.MCPServer) {
 		),
 	), s.handleListSubmissions)
 
+	// ── GENERATE SCHEMA (AI) ────────────────────────────────────────────
 	if s.aiGenerator != nil {
 		srv.AddTool(mcpgo.NewTool("generate_form_schema",
 			mcpgo.WithDescription("Generate a Jotform form schema from a natural language description using AI"),
@@ -77,6 +113,8 @@ func (s *Server) registerTools(srv *server.MCPServer) {
 		), s.handleGenerateSchema)
 	}
 }
+
+// ── Handlers ────────────────────────────────────────────────────────────
 
 func (s *Server) handleListForms(ctx context.Context, req mcpgo.CallToolRequest) (*mcpgo.CallToolResult, error) {
 	forms, err := s.apiClient.ListForms(0, 50)
@@ -117,6 +155,51 @@ func (s *Server) handleCreateForm(ctx context.Context, req mcpgo.CallToolRequest
 	return mcpgo.NewToolResultText(result), nil
 }
 
+func (s *Server) handleUpdateForm(ctx context.Context, req mcpgo.CallToolRequest) (*mcpgo.CallToolResult, error) {
+	formID := req.GetString("form_id", "")
+	if formID == "" {
+		return mcpgo.NewToolResultError("form_id is required"), nil
+	}
+	schemaStr := req.GetString("schema", "")
+	if schemaStr == "" {
+		return mcpgo.NewToolResultError("schema is required"), nil
+	}
+	var schema map[string]any
+	if err := json.Unmarshal([]byte(schemaStr), &schema); err != nil {
+		return mcpgo.NewToolResultError(fmt.Sprintf("invalid JSON schema: %s", err)), nil
+	}
+	form, err := s.apiClient.UpdateForm(formID, schema)
+	if err != nil {
+		return mcpgo.NewToolResultError(err.Error()), nil
+	}
+	result := fmt.Sprintf("Form updated successfully!\nID: %s\nTitle: %s\nURL: %s", form.ID, form.Title, form.URL)
+	return mcpgo.NewToolResultText(result), nil
+}
+
+func (s *Server) handleDeleteForm(ctx context.Context, req mcpgo.CallToolRequest) (*mcpgo.CallToolResult, error) {
+	formID := req.GetString("form_id", "")
+	if formID == "" {
+		return mcpgo.NewToolResultError("form_id is required"), nil
+	}
+	if err := s.apiClient.DeleteForm(formID); err != nil {
+		return mcpgo.NewToolResultError(err.Error()), nil
+	}
+	return mcpgo.NewToolResultText(fmt.Sprintf("Form %s deleted successfully.", formID)), nil
+}
+
+func (s *Server) handleExportForm(ctx context.Context, req mcpgo.CallToolRequest) (*mcpgo.CallToolResult, error) {
+	formID := req.GetString("form_id", "")
+	if formID == "" {
+		return mcpgo.NewToolResultError("form_id is required"), nil
+	}
+	form, err := s.apiClient.GetForm(formID)
+	if err != nil {
+		return mcpgo.NewToolResultError(err.Error()), nil
+	}
+	data, _ := json.MarshalIndent(form, "", "  ")
+	return mcpgo.NewToolResultText(string(data)), nil
+}
+
 func (s *Server) handleListSubmissions(ctx context.Context, req mcpgo.CallToolRequest) (*mcpgo.CallToolResult, error) {
 	formID := req.GetString("form_id", "")
 	if formID == "" {
@@ -136,10 +219,10 @@ func (s *Server) handleGenerateSchema(ctx context.Context, req mcpgo.CallToolReq
 	if prompt == "" {
 		return mcpgo.NewToolResultError("prompt is required"), nil
 	}
-	schema, err := s.aiGenerator.GenerateSchema(ctx, prompt)
+	result, err := s.aiGenerator.GenerateSchema(ctx, prompt)
 	if err != nil {
 		return mcpgo.NewToolResultError(err.Error()), nil
 	}
-	data, _ := json.MarshalIndent(schema, "", "  ")
+	data, _ := json.MarshalIndent(result.Schema, "", "  ")
 	return mcpgo.NewToolResultText(string(data)), nil
 }

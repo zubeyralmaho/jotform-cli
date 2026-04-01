@@ -8,6 +8,7 @@ import (
 
 	"github.com/jotform/jotform-cli/internal/api"
 	"github.com/jotform/jotform-cli/internal/output"
+	"github.com/jotform/jotform-cli/internal/watch"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -38,20 +39,38 @@ var submissionsListCmd = &cobra.Command{
 var submissionsWatchCmd = &cobra.Command{
 	Use:   "watch [form-id]",
 	Short: "Stream new submissions to stdout (newline-delimited JSON)",
-	Args:  cobra.ExactArgs(1),
+	Long: `Long-polls the Jotform API and emits new submissions as newline-delimited JSON.
+By default uses a checkpoint file (~/.jotform/watch-<formID>.cursor) to survive restarts.
+Use --no-checkpoint to disable persistence and keep everything in memory.`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		interval, _ := cmd.Flags().GetDuration("interval")
+		noCheckpoint, _ := cmd.Flags().GetBool("no-checkpoint")
 		client, err := newClient()
 		if err != nil {
 			return err
 		}
-		return watchSubmissions(client, args[0], interval)
+		return watchSubmissions(client, args[0], interval, !noCheckpoint)
 	},
 }
 
-func watchSubmissions(client *api.Client, formID string, interval time.Duration) error {
-	seen := map[string]bool{}
+func watchSubmissions(client *api.Client, formID string, interval time.Duration, useCheckpoint bool) error {
 	enc := json.NewEncoder(os.Stdout)
+
+	var cp *watch.Checkpoint
+	seen := map[string]bool{}
+
+	if useCheckpoint {
+		var err error
+		cp, err = watch.Load(formID)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "warning: could not load checkpoint: %v (starting fresh)\n", err)
+			cp = nil
+			useCheckpoint = false
+		} else if cp.LastSeenID != "" {
+			fmt.Fprintf(os.Stderr, "Resuming from checkpoint (last seen: %s at %s)\n", cp.LastSeenID, cp.LastCreatedAt)
+		}
+	}
 
 	fmt.Fprintf(os.Stderr, "Watching form %s (interval: %s) — Ctrl+C to stop\n", formID, interval)
 
@@ -60,11 +79,34 @@ func watchSubmissions(client *api.Client, formID string, interval time.Duration)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "error:", err)
 		} else {
+			// Process oldest first
 			for i := len(subs) - 1; i >= 0; i-- {
 				s := subs[i]
-				if !seen[s.ID] {
+
+				// Dedup check
+				if useCheckpoint && cp != nil {
+					if cp.HasSeen(s.ID, s.CreatedAt) {
+						continue
+					}
+				} else {
+					if seen[s.ID] {
+						continue
+					}
 					seen[s.ID] = true
-					enc.Encode(s)
+				}
+
+				enc.Encode(s)
+
+				// Update checkpoint
+				if useCheckpoint && cp != nil {
+					cp.Update(s.ID, s.CreatedAt)
+				}
+			}
+
+			// Persist checkpoint after each batch
+			if useCheckpoint && cp != nil {
+				if err := cp.Save(); err != nil {
+					fmt.Fprintf(os.Stderr, "warning: could not save checkpoint: %v\n", err)
 				}
 			}
 		}
@@ -75,6 +117,7 @@ func watchSubmissions(client *api.Client, formID string, interval time.Duration)
 func init() {
 	submissionsListCmd.Flags().Int("limit", 20, "Number of submissions to return")
 	submissionsWatchCmd.Flags().Duration("interval", 5*time.Second, "Polling interval")
+	submissionsWatchCmd.Flags().Bool("no-checkpoint", false, "Disable checkpoint file (in-memory dedup only)")
 
 	submissionsCmd.AddCommand(submissionsListCmd, submissionsWatchCmd)
 	rootCmd.AddCommand(submissionsCmd)

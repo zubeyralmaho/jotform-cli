@@ -14,7 +14,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.22"
+          go-version: "1.26.1"
 
       - name: Build
         run: go build -o jotform .
@@ -32,7 +32,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.22"
+          go-version: "1.26.1"
 
       - uses: golangci/golangci-lint-action@v4
         with:
