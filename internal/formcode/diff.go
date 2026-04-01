@@ -39,8 +39,8 @@ func HasChanges(remote, local map[string]interface{}) bool {
 // Uses a basic LCS-based approach for readable diffs.
 func unifiedDiff(oldName, newName string, oldLines, newLines []string) string {
 	var buf strings.Builder
-	buf.WriteString(fmt.Sprintf("--- %s\n", oldName))
-	buf.WriteString(fmt.Sprintf("+++ %s\n", newName))
+	_, _ = fmt.Fprintf(&buf, "--- %s\n", oldName)
+	_, _ = fmt.Fprintf(&buf, "+++ %s\n", newName)
 
 	// Simple line-by-line comparison with context
 	type change struct {
@@ -74,10 +74,10 @@ func unifiedDiff(oldName, newName string, oldLines, newLines []string) string {
 
 	for _, c := range changes {
 		if c.old != "" {
-			buf.WriteString(fmt.Sprintf("-%s\n", c.old))
+			_, _ = fmt.Fprintf(&buf, "-%s\n", c.old)
 		}
 		if c.new != "" {
-			buf.WriteString(fmt.Sprintf("+%s\n", c.new))
+			_, _ = fmt.Fprintf(&buf, "+%s\n", c.new)
 		}
 	}
 
