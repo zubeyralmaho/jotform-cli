@@ -1,3 +1,6 @@
+> **Note**: This is a build guide written during initial development.
+> For current architecture, see [00-architecture.md](00-architecture.md). For usage, see the [README](../README.md).
+
 # Testing Strategy
 
 ## Layers

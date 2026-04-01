@@ -1,8 +1,11 @@
+> **Note**: This is a build guide written during initial development. It may reference outdated versions.
+> For current architecture, see [00-architecture.md](00-architecture.md). For usage, see the [README](../README.md).
+
 # Phase 0: Project Setup
 
 ## Prerequisites
 
-- Go 1.22+
+- Go 1.26.1+
 - A Jotform account with an API key
 
 ---

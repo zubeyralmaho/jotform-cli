@@ -1,3 +1,6 @@
+> **Status**: DESIGN SPECIFICATION — partially implemented.
+> This document describes the target TUI experience. For current state, see [00-architecture.md](../00-architecture.md).
+
 # Product Architecture & Brand Guidelines: Jotform-CLI (Go Edition)
 
 ## 1. Project Vision & Core Philosophy
