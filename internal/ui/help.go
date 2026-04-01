@@ -27,6 +27,7 @@ func categorizeCommands(cmd *cobra.Command) []commandGroup {
 
 	// Map command names to groups
 	coreNames := map[string]bool{
+		"dashboard": true,
 		"auth": true, "login": true, "logout": true, "whoami": true,
 		"forms": true, "ls": true, "list": true, "get": true,
 		"new": true, "create": true, "rm": true, "delete": true,
@@ -64,6 +65,14 @@ func categorizeCommands(cmd *cobra.Command) []commandGroup {
 		cmds := groups[title]
 		if len(cmds) > 0 {
 			sort.Slice(cmds, func(i, j int) bool {
+				if title == "Core" {
+					if cmds[i].Name() == "dashboard" {
+						return true
+					}
+					if cmds[j].Name() == "dashboard" {
+						return false
+					}
+				}
 				return cmds[i].Name() < cmds[j].Name()
 			})
 			result = append(result, commandGroup{Title: title, Commands: cmds})

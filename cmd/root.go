@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/zubeyralmaho/jotform-cli/internal/ui"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/zubeyralmaho/jotform-cli/internal/ui"
 )
 
 var cfgFile string
@@ -27,7 +27,7 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	cobra.OnInitialize(initConfig, initAPIKeyCache)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default: ~/.config/jotform/config.yaml)")
 	rootCmd.PersistentFlags().String("api-key", "", "Jotform API key (overrides keychain)")
@@ -39,6 +39,13 @@ func init() {
 
 	// Apply branded help to root command
 	ui.SetCustomHelp(rootCmd)
+}
+
+// initAPIKeyCache pre-loads the API key into cache at app startup to avoid
+// repeated keychain prompts during command execution
+func initAPIKeyCache() {
+	// Ignore errors - API key might not be in keychain yet
+	resolveAPIKey()
 }
 
 func initConfig() {

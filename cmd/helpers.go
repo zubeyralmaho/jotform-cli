@@ -5,20 +5,41 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/zubeyralmaho/jotform-cli/internal/api"
 	"github.com/zubeyralmaho/jotform-cli/internal/auth"
 	"github.com/spf13/viper"
 )
 
+var (
+	cachedAPIKey string
+	apiKeyMu     sync.Mutex
+)
+
 // resolveAPIKey returns the API key from (in order):
 // 1. --api-key flag / JOTFORM_API_KEY env
-// 2. System keychain
+// 2. Cached key from memory
+// 3. System keychain (only loaded once)
 func resolveAPIKey() (string, error) {
 	if key := viper.GetString("api_key"); key != "" {
 		return key, nil
 	}
-	return auth.LoadAPIKey()
+
+	apiKeyMu.Lock()
+	defer apiKeyMu.Unlock()
+
+	if cachedAPIKey != "" {
+		return cachedAPIKey, nil
+	}
+
+	key, err := auth.LoadAPIKey()
+	if err != nil {
+		return "", err
+	}
+
+	cachedAPIKey = key
+	return cachedAPIKey, nil
 }
 
 // newClient creates an authenticated API client.

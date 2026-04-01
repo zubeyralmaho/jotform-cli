@@ -7,10 +7,10 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/spf13/cobra"
 	"github.com/zubeyralmaho/jotform-cli/internal/config"
 	"github.com/zubeyralmaho/jotform-cli/internal/formcode"
 	"github.com/zubeyralmaho/jotform-cli/internal/ui"
-	"github.com/spf13/cobra"
 )
 
 var initCmd = &cobra.Command{

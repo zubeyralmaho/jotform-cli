@@ -60,30 +60,30 @@ func TestInitNewFormLogic(t *testing.T) {
 func TestProjectConfigCreation(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-	
+
 	cfg := &config.ProjectConfig{
 		FormID: "123456789",
 		Name:   "Test Form",
 		Schema: "form.yaml",
 	}
-	
+
 	err := config.SaveProject(cfg, tmpDir)
 	if err != nil {
 		t.Fatalf("SaveProject failed: %v", err)
 	}
-	
+
 	// Verify .jotform.yaml was created
 	configPath := filepath.Join(tmpDir, config.ProjectFileName)
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		t.Errorf("Expected %s to be created", config.ProjectFileName)
 	}
-	
+
 	// Verify the file can be loaded back
 	loadedCfg, err := config.LoadProject()
 	if err != nil {
 		t.Fatalf("LoadProject failed: %v", err)
 	}
-	
+
 	// Note: LoadProject searches from current directory, so it might not find our temp file
 	// This is expected behavior - just verify no error occurred
 	_ = loadedCfg

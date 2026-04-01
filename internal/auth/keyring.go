@@ -46,6 +46,6 @@ func DeleteAPIKey() error {
 func openKeyring() (keyring.Keyring, error) {
 	return keyring.Open(keyring.Config{
 		ServiceName:              serviceName,
-		KeychainTrustApplication: true,
+		KeychainTrustApplication: false,
 	})
 }

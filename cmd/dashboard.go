@@ -7,9 +7,9 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/spf13/cobra"
 	"github.com/zubeyralmaho/jotform-cli/internal/api"
 	"github.com/zubeyralmaho/jotform-cli/internal/ui"
-	"github.com/spf13/cobra"
 )
 
 var dashboardCmd = &cobra.Command{
@@ -23,7 +23,7 @@ var dashboardCmd = &cobra.Command{
 Controls:
 	↑/↓ or j/k   Navigate forms
 	1/2/3/4      Switch screens (overview/questions/submissions/actions)
-	? or 5       Open help
+	? or h       Open root help
 	b or esc      Go back (or quit from root screen)
 	r             Refresh current screen data
 	o             Open selected form in browser
@@ -38,8 +38,16 @@ Controls:
 			tea.WithAltScreen(),
 			tea.WithMouseCellMotion(),
 		)
-		_, err = p.Run()
-		return err
+		finalModel, err := p.Run()
+		if err != nil {
+			return err
+		}
+
+		if dm, ok := finalModel.(dashboardModel); ok && dm.openRootHelp {
+			return rootCmd.Help()
+		}
+
+		return nil
 	},
 }
 
@@ -60,7 +68,6 @@ const (
 	dashScreenQuestions
 	dashScreenSubmissions
 	dashScreenActions
-	dashScreenHelp
 )
 
 type dashboardModel struct {
@@ -73,6 +80,7 @@ type dashboardModel struct {
 	subs     []api.Submission
 	screen   dashScreen
 	history  []dashScreen
+	openRootHelp bool
 	errMsg   string
 	width    int
 	height   int
@@ -210,18 +218,18 @@ func (m dashboardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.pushScreen(dashScreenActions)
 			return m, nil
 
-		case "?", "5":
-			m.pushScreen(dashScreenHelp)
-			return m, nil
+		case "?", "h":
+			m.openRootHelp = true
+			return m, tea.Quit
 
-		case "left", "h":
+		case "left":
 			if m.screen > dashScreenOverview {
 				m.pushScreen(m.screen - 1)
 			}
 			return m, nil
 
 		case "right", "l", "tab":
-			if m.screen < dashScreenHelp {
+			if m.screen < dashScreenActions {
 				m.pushScreen(m.screen + 1)
 			}
 			return m, nil
@@ -327,7 +335,7 @@ func (m dashboardModel) viewDashboard() string {
 	header := ui.LogoCompact() + "  " + ui.Title.Render("Jotform Dashboard") +
 		ui.Muted.Render(fmt.Sprintf("  (%d forms)", len(m.forms))) +
 		lipgloss.NewStyle().PaddingLeft(4).Render(
-			ui.Muted.Render("↑↓ forms  1-5 screens  ? help  b back  r refresh  o open  q quit"),
+			ui.Muted.Render("↑↓ forms  1-4 screens  ?/h root help  b back  r refresh  o open  q quit"),
 		)
 
 	return header + "\n" + panes
@@ -375,7 +383,7 @@ func (m dashboardModel) renderDetail(width int) string {
 	}))
 	sb.WriteString("\n\n")
 
-	sb.WriteString(ui.Muted.Render("  [1] Overview  [2] Questions  [3] Submissions  [4] Actions  [5/?] Help") + "\n")
+	sb.WriteString(ui.Muted.Render("  [1] Overview  [2] Questions  [3] Submissions  [4] Actions  [?/h] Root Help") + "\n")
 	sb.WriteString(ui.Muted.Render("  [b/esc] Back  [r] Refresh  [o] Open form") + "\n\n")
 
 	switch m.screen {
@@ -387,8 +395,6 @@ func (m dashboardModel) renderDetail(width int) string {
 		sb.WriteString(m.renderSubmissions(width))
 	case dashScreenActions:
 		sb.WriteString(m.renderActions(width))
-	case dashScreenHelp:
-		sb.WriteString(m.renderHelp(width))
 	}
 
 	sb.WriteString("\n\n")
@@ -407,8 +413,6 @@ func (m dashboardModel) screenTitle() string {
 		return "Submissions"
 	case dashScreenActions:
 		return "Actions"
-	case dashScreenHelp:
-		return "Help"
 	default:
 		return "Overview"
 	}
@@ -505,69 +509,13 @@ func (m dashboardModel) renderActions(width int) string {
 		"  " + ui.Value.Render("o") + "  Open selected form in browser",
 		"  " + ui.Value.Render("r") + "  Refresh current screen data",
 		"  " + ui.Value.Render("s") + "  Jump to Submissions screen",
-		"  " + ui.Value.Render("?") + "  Open Help screen",
+		"  " + ui.Value.Render("?/h") + "  Open root help",
 		"  " + ui.Value.Render("1") + "  Go to Overview",
 		"  " + ui.Value.Render("2") + "  Go to Questions",
 		"  " + ui.Value.Render("3") + "  Go to Submissions",
 		"  " + ui.Value.Render("4") + "  Go to Actions",
-		"  " + ui.Value.Render("5") + "  Go to Help",
 		"  " + ui.Value.Render("b/esc") + "  Go back to previous screen",
 		"  " + ui.Value.Render("q") + "  Quit dashboard",
-	}, "\n")
-}
-
-func (m dashboardModel) renderHelp(width int) string {
-	return strings.Join([]string{
-		ui.Subtitle.Render("Help"),
-		ui.Separator(width),
-		"",
-		ui.Value.Render("Dashboard Navigation"),
-		"  ↑/↓ or j/k   Select form",
-		"  1            Overview",
-		"  2            Questions",
-		"  3 or s       Submissions",
-		"  4 or a       Actions",
-		"  5 or ?       Help",
-		"  b, esc       Back",
-		"  r            Refresh",
-		"  o            Open selected form URL",
-		"  q            Quit",
-		"",
-		ui.Value.Render("Root Commands"),
-		"  jotform --help",
-		"  jotform dashboard",
-		"  jotform status",
-		"  jotform diff",
-		"  jotform pull",
-		"  jotform push",
-		"  jotform share",
-		"  jotform open",
-		"  jotform version",
-		"  jotform completion <shell>",
-		"",
-		ui.Value.Render("CLI Commands"),
-		"  jotform auth login",
-		"  jotform forms list",
-		"  jotform forms get <form-id>",
-		"  jotform forms create --file <file>",
-		"  jotform forms update <form-id> --file <file>",
-		"  jotform forms delete <form-id>",
-		"  jotform forms export <form-id>",
-		"  jotform forms import --file <file>",
-		"  jotform forms status <form-id>",
-		"  jotform forms diff <form-id>",
-		"  jotform forms apply <form-id>",
-		"  jotform submissions list <form-id>",
-		"  jotform submissions watch <form-id>",
-		"  jotform share <form-id>",
-		"  jotform open <form-id>",
-		"  jotform init",
-		"  jotform clone <form-id>",
-		"  jotform ai generate-schema \"prompt\"",
-		"  jotform ai analyze <form-id>",
-		"  jotform mcp start-server",
-		"",
-		ui.Muted.Render("Use b/esc to return to your previous screen."),
 	}, "\n")
 }
 

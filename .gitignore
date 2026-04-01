@@ -13,4 +13,6 @@ coverage.out
 # Local schema file generated during CLI experimentation in cmd/.
 cmd/form.yaml
 
-.kiro/*
+.kiro/**
+
+

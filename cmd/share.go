@@ -6,10 +6,10 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	qrcode "github.com/skip2/go-qrcode"
+	"github.com/spf13/cobra"
 	"github.com/zubeyralmaho/jotform-cli/internal/api"
 	"github.com/zubeyralmaho/jotform-cli/internal/config"
 	"github.com/zubeyralmaho/jotform-cli/internal/ui"
-	"github.com/spf13/cobra"
 )
 
 var shareCmd = &cobra.Command{
