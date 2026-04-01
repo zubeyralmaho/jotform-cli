@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/jotform/jotform-cli/internal/config"
 	"github.com/jotform/jotform-cli/internal/formcode"
 	"github.com/jotform/jotform-cli/internal/output"
 	"github.com/spf13/cobra"
@@ -12,8 +13,9 @@ import (
 )
 
 var formsCmd = &cobra.Command{
-	Use:   "forms",
-	Short: "Manage Jotform forms",
+	Use:     "forms",
+	Aliases: []string{"f", "form"},
+	Short:   "Manage Jotform forms",
 }
 
 // ── LIST ────────────────────────────────────────────────────────────────
@@ -21,17 +23,19 @@ var formsCmd = &cobra.Command{
 var formsListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all forms",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		client, err := newClient()
-		if err != nil {
-			return err
-		}
-		forms, err := client.ListForms(0, 100)
-		if err != nil {
-			return err
-		}
-		return output.Print(forms, output.Format(viper.GetString("output")))
-	},
+	RunE:  runFormsList,
+}
+
+func runFormsList(cmd *cobra.Command, args []string) error {
+	client, err := newClient()
+	if err != nil {
+		return err
+	}
+	forms, err := client.ListForms(0, 100)
+	if err != nil {
+		return err
+	}
+	return output.Print(forms, output.Format(viper.GetString("output")))
 }
 
 // ── GET ─────────────────────────────────────────────────────────────────
@@ -39,18 +43,24 @@ var formsListCmd = &cobra.Command{
 var formsGetCmd = &cobra.Command{
 	Use:   "get [form-id]",
 	Short: "Fetch form structure",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		client, err := newClient()
-		if err != nil {
-			return err
-		}
-		form, err := client.GetForm(args[0])
-		if err != nil {
-			return err
-		}
-		return output.Print(form, output.Format(viper.GetString("output")))
-	},
+	Args:  cobra.MaximumNArgs(1),
+	RunE:  runFormsGet,
+}
+
+func runFormsGet(cmd *cobra.Command, args []string) error {
+	formID, err := config.ResolveFormID(args)
+	if err != nil {
+		return err
+	}
+	client, err := newClient()
+	if err != nil {
+		return err
+	}
+	form, err := client.GetForm(formID)
+	if err != nil {
+		return err
+	}
+	return output.Print(form, output.Format(viper.GetString("output")))
 }
 
 // ── CREATE ──────────────────────────────────────────────────────────────
@@ -58,37 +68,44 @@ var formsGetCmd = &cobra.Command{
 var formsCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a form from a local JSON or YAML file",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		filePath, _ := cmd.Flags().GetString("file")
-		schema, err := formcode.ReadFile(filePath)
-		if err != nil {
-			return err
-		}
+	RunE:  runFormsCreate,
+}
 
-		// Schema validation before API call
-		skipValidation, _ := cmd.Flags().GetBool("skip-validation")
-		if !skipValidation {
-			if errs := formcode.ValidateSchema(schema); len(errs) > 0 {
-				fmt.Fprintln(os.Stderr, "Schema validation failed:")
-				for _, e := range errs {
-					fmt.Fprintf(os.Stderr, "  ✗ %s\n", e)
-				}
-				fmt.Fprintln(os.Stderr, "\nUse --skip-validation to bypass.")
-				return fmt.Errorf("%d validation error(s)", len(errs))
+func runFormsCreate(cmd *cobra.Command, args []string) error {
+	filePath, _ := cmd.Flags().GetString("file")
+	schemaFile, err := config.ResolveSchemaFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	schema, err := formcode.ReadFile(schemaFile)
+	if err != nil {
+		return err
+	}
+
+	// Schema validation before API call
+	skipValidation, _ := cmd.Flags().GetBool("skip-validation")
+	if !skipValidation {
+		if errs := formcode.ValidateSchema(schema); len(errs) > 0 {
+			fmt.Fprintln(os.Stderr, "Schema validation failed:")
+			for _, e := range errs {
+				fmt.Fprintf(os.Stderr, "  ✗ %s\n", e)
 			}
+			fmt.Fprintln(os.Stderr, "\nUse --skip-validation to bypass.")
+			return fmt.Errorf("%d validation error(s)", len(errs))
 		}
+	}
 
-		client, err := newClient()
-		if err != nil {
-			return err
-		}
-		form, err := client.CreateForm(schema)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("Form created: %s\nID:  %s\nURL: %s\n", form.Title, form.ID, form.URL)
-		return nil
-	},
+	client, err := newClient()
+	if err != nil {
+		return err
+	}
+	form, err := client.CreateForm(schema)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Form created: %s\nID:  %s\nURL: %s\n", form.Title, form.ID, form.URL)
+	return nil
 }
 
 // ── UPDATE ──────────────────────────────────────────────────────────────
@@ -96,37 +113,56 @@ var formsCreateCmd = &cobra.Command{
 var formsUpdateCmd = &cobra.Command{
 	Use:   "update [form-id]",
 	Short: "Update an existing form from a local JSON or YAML file",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		filePath, _ := cmd.Flags().GetString("file")
-		schema, err := formcode.ReadFile(filePath)
-		if err != nil {
-			return err
-		}
+	Args:  cobra.MaximumNArgs(1),
+	RunE:  runFormsUpdate,
+}
 
-		skipValidation, _ := cmd.Flags().GetBool("skip-validation")
-		if !skipValidation {
-			if errs := formcode.ValidateSchema(schema); len(errs) > 0 {
-				fmt.Fprintln(os.Stderr, "Schema validation failed:")
-				for _, e := range errs {
-					fmt.Fprintf(os.Stderr, "  ✗ %s\n", e)
-				}
-				fmt.Fprintln(os.Stderr, "\nUse --skip-validation to bypass.")
-				return fmt.Errorf("%d validation error(s)", len(errs))
+func runFormsUpdate(cmd *cobra.Command, args []string) error {
+	formID, err := config.ResolveFormID(args)
+	if err != nil {
+		return err
+	}
+
+	filePath, _ := cmd.Flags().GetString("file")
+	schemaFile, err := config.ResolveSchemaFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	schema, err := formcode.ReadFile(schemaFile)
+	if err != nil {
+		return err
+	}
+
+	skipValidation, _ := cmd.Flags().GetBool("skip-validation")
+	if !skipValidation {
+		if errs := formcode.ValidateSchema(schema); len(errs) > 0 {
+			fmt.Fprintln(os.Stderr, "Schema validation failed:")
+			for _, e := range errs {
+				fmt.Fprintf(os.Stderr, "  ✗ %s\n", e)
 			}
+			fmt.Fprintln(os.Stderr, "\nUse --skip-validation to bypass.")
+			return fmt.Errorf("%d validation error(s)", len(errs))
 		}
+	}
 
-		client, err := newClient()
-		if err != nil {
-			return err
-		}
-		form, err := client.UpdateForm(args[0], schema)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("Form updated: %s\nID:  %s\nURL: %s\n", form.Title, form.ID, form.URL)
+	dryRun, _ := cmd.Flags().GetBool("dry-run")
+	if dryRun {
+		fmt.Printf("⚠️  Would update form %s from %s\n", formID, schemaFile)
+		fmt.Println("Run without --dry-run to apply.")
 		return nil
-	},
+	}
+
+	client, err := newClient()
+	if err != nil {
+		return err
+	}
+	form, err := client.UpdateForm(formID, schema)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Form updated: %s\nID:  %s\nURL: %s\n", form.Title, form.ID, form.URL)
+	return nil
 }
 
 // ── DELETE ──────────────────────────────────────────────────────────────
@@ -134,18 +170,41 @@ var formsUpdateCmd = &cobra.Command{
 var formsDeleteCmd = &cobra.Command{
 	Use:   "delete [form-id]",
 	Short: "Delete a form",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		client, err := newClient()
-		if err != nil {
-			return err
-		}
-		if err := client.DeleteForm(args[0]); err != nil {
-			return err
-		}
-		fmt.Printf("Form %s deleted.\n", args[0])
+	Args:  cobra.MaximumNArgs(1),
+	RunE:  runFormsDelete,
+}
+
+func runFormsDelete(cmd *cobra.Command, args []string) error {
+	formID, err := config.ResolveFormID(args)
+	if err != nil {
+		return err
+	}
+
+	dryRun, _ := cmd.Flags().GetBool("dry-run")
+	if dryRun {
+		fmt.Printf("⚠️  Would delete form %s\n", formID)
+		fmt.Println("Run without --dry-run to confirm.")
 		return nil
-	},
+	}
+
+	// Interactive confirmation unless --force
+	force, _ := cmd.Flags().GetBool("force")
+	if !force {
+		if !confirmPrompt(fmt.Sprintf("Delete form %s? This cannot be undone.", formID)) {
+			fmt.Println("Cancelled.")
+			return nil
+		}
+	}
+
+	client, err := newClient()
+	if err != nil {
+		return err
+	}
+	if err := client.DeleteForm(formID); err != nil {
+		return err
+	}
+	fmt.Printf("Form %s deleted.\n", formID)
+	return nil
 }
 
 // ── SYNC ────────────────────────────────────────────────────────────────
@@ -184,39 +243,52 @@ var formsSyncCmd = &cobra.Command{
 	},
 }
 
-// ── EXPORT ──────────────────────────────────────────────────────────────
+// ── EXPORT / PULL ───────────────────────────────────────────────────────
 
 var formsExportCmd = &cobra.Command{
 	Use:   "export [form-id]",
 	Short: "Export a single form to a local YAML or JSON file",
 	Long:  `Downloads the full form structure and writes it to a local file for version control.`,
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		outPath, _ := cmd.Flags().GetString("out")
-		if outPath == "" {
-			outPath = args[0] + ".yaml"
-		}
+	Args:  cobra.MaximumNArgs(1),
+	RunE:  runFormsExport,
+}
 
-		client, err := newClient()
-		if err != nil {
-			return err
-		}
-		form, err := client.GetForm(args[0])
-		if err != nil {
-			return err
-		}
+func runFormsExport(cmd *cobra.Command, args []string) error {
+	formID, err := config.ResolveFormID(args)
+	if err != nil {
+		return err
+	}
 
-		data, err := formcode.FormPropertiesToMap(form)
-		if err != nil {
-			return err
+	outPath, _ := cmd.Flags().GetString("out")
+	if outPath == "" {
+		// Check project context for default schema path
+		cfg, _ := config.LoadProject()
+		if cfg != nil && cfg.Schema != "" {
+			outPath = cfg.Schema
+		} else {
+			outPath = formID + ".yaml"
 		}
+	}
 
-		if err := formcode.WriteFile(outPath, data); err != nil {
-			return err
-		}
-		fmt.Printf("Exported form %s → %s\n", args[0], outPath)
-		return nil
-	},
+	client, err := newClient()
+	if err != nil {
+		return err
+	}
+	form, err := client.GetForm(formID)
+	if err != nil {
+		return err
+	}
+
+	data, err := formcode.FormPropertiesToMap(form)
+	if err != nil {
+		return err
+	}
+
+	if err := formcode.WriteFile(outPath, data); err != nil {
+		return err
+	}
+	fmt.Printf("Exported form %s → %s\n", formID, outPath)
+	return nil
 }
 
 // ── IMPORT ──────────────────────────────────────────────────────────────
@@ -225,36 +297,7 @@ var formsImportCmd = &cobra.Command{
 	Use:   "import",
 	Short: "Import a form from a local JSON or YAML file (creates a new form)",
 	Long:  `Reads a local form definition and creates it on Jotform. Alias for 'create' with Form-as-Code terminology.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		filePath, _ := cmd.Flags().GetString("file")
-		schema, err := formcode.ReadFile(filePath)
-		if err != nil {
-			return err
-		}
-
-		skipValidation, _ := cmd.Flags().GetBool("skip-validation")
-		if !skipValidation {
-			if errs := formcode.ValidateSchema(schema); len(errs) > 0 {
-				fmt.Fprintln(os.Stderr, "Schema validation failed:")
-				for _, e := range errs {
-					fmt.Fprintf(os.Stderr, "  ✗ %s\n", e)
-				}
-				fmt.Fprintln(os.Stderr, "\nUse --skip-validation to bypass.")
-				return fmt.Errorf("%d validation error(s)", len(errs))
-			}
-		}
-
-		client, err := newClient()
-		if err != nil {
-			return err
-		}
-		form, err := client.CreateForm(schema)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("Form imported: %s\nID:  %s\nURL: %s\n", form.Title, form.ID, form.URL)
-		return nil
-	},
+	RunE:  runFormsCreate, // Same logic as create
 }
 
 // ── DIFF ────────────────────────────────────────────────────────────────
@@ -263,111 +306,133 @@ var formsDiffCmd = &cobra.Command{
 	Use:   "diff [form-id]",
 	Short: "Show differences between remote form and local file",
 	Long:  `Compares the remote form structure with a local file and displays a unified diff.`,
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		filePath, _ := cmd.Flags().GetString("file")
-		if filePath == "" {
-			return fmt.Errorf("--file is required for diff")
-		}
-
-		local, err := formcode.ReadFile(filePath)
-		if err != nil {
-			return err
-		}
-
-		client, err := newClient()
-		if err != nil {
-			return err
-		}
-		form, err := client.GetForm(args[0])
-		if err != nil {
-			return err
-		}
-
-		remote, err := formcode.FormPropertiesToMap(form)
-		if err != nil {
-			return err
-		}
-
-		if !formcode.HasChanges(remote, local) {
-			fmt.Println("No changes detected.")
-			return nil
-		}
-
-		diff, err := formcode.ComputeDiff(remote, local)
-		if err != nil {
-			return err
-		}
-		fmt.Print(diff)
-		return nil
-	},
+	Args:  cobra.MaximumNArgs(1),
+	RunE:  runFormsDiff,
 }
 
-// ── APPLY ───────────────────────────────────────────────────────────────
+func runFormsDiff(cmd *cobra.Command, args []string) error {
+	formID, err := config.ResolveFormID(args)
+	if err != nil {
+		return err
+	}
+
+	filePath, _ := cmd.Flags().GetString("file")
+	schemaFile, err := config.ResolveSchemaFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	local, err := formcode.ReadFile(schemaFile)
+	if err != nil {
+		return err
+	}
+
+	client, err := newClient()
+	if err != nil {
+		return err
+	}
+	form, err := client.GetForm(formID)
+	if err != nil {
+		return err
+	}
+
+	remote, err := formcode.FormPropertiesToMap(form)
+	if err != nil {
+		return err
+	}
+
+	if !formcode.HasChanges(remote, local) {
+		fmt.Println("No changes detected.")
+		return nil
+	}
+
+	diff, err := formcode.ComputeDiff(remote, local)
+	if err != nil {
+		return err
+	}
+	fmt.Print(diff)
+	return nil
+}
+
+// ── APPLY / PUSH ────────────────────────────────────────────────────────
 
 var formsApplyCmd = &cobra.Command{
 	Use:   "apply [form-id]",
 	Short: "Apply local changes to a remote form (diff + update)",
 	Long: `Compares the local file with the remote form; if changes exist,
 displays the diff and applies the update.`,
-	Args: cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		filePath, _ := cmd.Flags().GetString("file")
-		if filePath == "" {
-			return fmt.Errorf("--file is required for apply")
-		}
+	Args: cobra.MaximumNArgs(1),
+	RunE: runFormsApply,
+}
 
-		local, err := formcode.ReadFile(filePath)
-		if err != nil {
-			return err
-		}
+func runFormsApply(cmd *cobra.Command, args []string) error {
+	formID, err := config.ResolveFormID(args)
+	if err != nil {
+		return err
+	}
 
-		skipValidation, _ := cmd.Flags().GetBool("skip-validation")
-		if !skipValidation {
-			if errs := formcode.ValidateSchema(local); len(errs) > 0 {
-				fmt.Fprintln(os.Stderr, "Schema validation failed:")
-				for _, e := range errs {
-					fmt.Fprintf(os.Stderr, "  ✗ %s\n", e)
-				}
-				fmt.Fprintln(os.Stderr, "\nUse --skip-validation to bypass.")
-				return fmt.Errorf("%d validation error(s)", len(errs))
+	filePath, _ := cmd.Flags().GetString("file")
+	schemaFile, err := config.ResolveSchemaFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	local, err := formcode.ReadFile(schemaFile)
+	if err != nil {
+		return err
+	}
+
+	skipValidation, _ := cmd.Flags().GetBool("skip-validation")
+	if !skipValidation {
+		if errs := formcode.ValidateSchema(local); len(errs) > 0 {
+			fmt.Fprintln(os.Stderr, "Schema validation failed:")
+			for _, e := range errs {
+				fmt.Fprintf(os.Stderr, "  ✗ %s\n", e)
 			}
+			fmt.Fprintln(os.Stderr, "\nUse --skip-validation to bypass.")
+			return fmt.Errorf("%d validation error(s)", len(errs))
 		}
+	}
 
-		client, err := newClient()
-		if err != nil {
-			return err
-		}
-		form, err := client.GetForm(args[0])
-		if err != nil {
-			return err
-		}
+	client, err := newClient()
+	if err != nil {
+		return err
+	}
+	form, err := client.GetForm(formID)
+	if err != nil {
+		return err
+	}
 
-		remote, err := formcode.FormPropertiesToMap(form)
-		if err != nil {
-			return err
-		}
+	remote, err := formcode.FormPropertiesToMap(form)
+	if err != nil {
+		return err
+	}
 
-		if !formcode.HasChanges(remote, local) {
-			fmt.Println("No changes to apply.")
-			return nil
-		}
-
-		diff, err := formcode.ComputeDiff(remote, local)
-		if err != nil {
-			return err
-		}
-		fmt.Println("Changes to apply:")
-		fmt.Print(diff)
-		fmt.Println()
-
-		updated, err := client.UpdateForm(args[0], local)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("Form updated: %s\nID:  %s\nURL: %s\n", updated.Title, updated.ID, updated.URL)
+	if !formcode.HasChanges(remote, local) {
+		fmt.Println("No changes to apply.")
 		return nil
-	},
+	}
+
+	diff, err := formcode.ComputeDiff(remote, local)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Changes to apply:")
+	fmt.Print(diff)
+	fmt.Println()
+
+	dryRun, _ := cmd.Flags().GetBool("dry-run")
+	if dryRun {
+		fmt.Println("No changes applied (--dry-run).")
+		return nil
+	}
+
+	updated, err := client.UpdateForm(formID, local)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Form updated: %s\nID:  %s\nURL: %s\n", updated.Title, updated.ID, updated.URL)
+	return nil
 }
 
 // ── INIT ────────────────────────────────────────────────────────────────
@@ -375,30 +440,31 @@ displays the diff and applies the update.`,
 func init() {
 	// create flags
 	formsCreateCmd.Flags().String("file", "", "Path to JSON or YAML form schema file")
-	formsCreateCmd.MarkFlagRequired("file")
 	formsCreateCmd.Flags().Bool("skip-validation", false, "Skip schema validation before creating")
 
 	// update flags
 	formsUpdateCmd.Flags().String("file", "", "Path to JSON or YAML form schema file")
-	formsUpdateCmd.MarkFlagRequired("file")
 	formsUpdateCmd.Flags().Bool("skip-validation", false, "Skip schema validation before updating")
+	formsUpdateCmd.Flags().Bool("dry-run", false, "Preview changes without applying")
+
+	// delete flags
+	formsDeleteCmd.Flags().BoolP("force", "f", false, "Skip confirmation prompt")
+	formsDeleteCmd.Flags().Bool("dry-run", false, "Preview action without executing")
 
 	// export flags
 	formsExportCmd.Flags().StringP("out", "o", "", "Output file path (default: <form-id>.yaml)")
 
-	// import flags
+	// import flags (same as create)
 	formsImportCmd.Flags().String("file", "", "Path to JSON or YAML form schema file")
-	formsImportCmd.MarkFlagRequired("file")
 	formsImportCmd.Flags().Bool("skip-validation", false, "Skip schema validation before importing")
 
 	// diff flags
 	formsDiffCmd.Flags().String("file", "", "Path to local form file to compare against remote")
-	formsDiffCmd.MarkFlagRequired("file")
 
 	// apply flags
 	formsApplyCmd.Flags().String("file", "", "Path to local form file to apply to remote")
-	formsApplyCmd.MarkFlagRequired("file")
 	formsApplyCmd.Flags().Bool("skip-validation", false, "Skip schema validation before applying")
+	formsApplyCmd.Flags().Bool("dry-run", false, "Preview changes without applying")
 
 	formsCmd.AddCommand(
 		formsListCmd,

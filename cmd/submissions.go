@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jotform/jotform-cli/internal/api"
+	"github.com/jotform/jotform-cli/internal/config"
 	"github.com/jotform/jotform-cli/internal/output"
 	"github.com/jotform/jotform-cli/internal/watch"
 	"github.com/spf13/cobra"
@@ -14,21 +15,26 @@ import (
 )
 
 var submissionsCmd = &cobra.Command{
-	Use:   "submissions",
-	Short: "Manage form submissions",
+	Use:     "submissions",
+	Aliases: []string{"subs", "sub"},
+	Short:   "Manage form submissions",
 }
 
 var submissionsListCmd = &cobra.Command{
 	Use:   "list [form-id]",
 	Short: "List recent submissions for a form",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		formID, err := config.ResolveFormID(args)
+		if err != nil {
+			return err
+		}
 		limit, _ := cmd.Flags().GetInt("limit")
 		client, err := newClient()
 		if err != nil {
 			return err
 		}
-		subs, err := client.GetSubmissions(args[0], 0, limit, "created_at", "DESC")
+		subs, err := client.GetSubmissions(formID, 0, limit, "created_at", "DESC")
 		if err != nil {
 			return err
 		}
@@ -42,16 +48,22 @@ var submissionsWatchCmd = &cobra.Command{
 	Long: `Long-polls the Jotform API and emits new submissions as newline-delimited JSON.
 By default uses a checkpoint file (~/.jotform/watch-<formID>.cursor) to survive restarts.
 Use --no-checkpoint to disable persistence and keep everything in memory.`,
-	Args: cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		interval, _ := cmd.Flags().GetDuration("interval")
-		noCheckpoint, _ := cmd.Flags().GetBool("no-checkpoint")
-		client, err := newClient()
-		if err != nil {
-			return err
-		}
-		return watchSubmissions(client, args[0], interval, !noCheckpoint)
-	},
+	Args: cobra.MaximumNArgs(1),
+	RunE: runSubmissionsWatch,
+}
+
+func runSubmissionsWatch(cmd *cobra.Command, args []string) error {
+	formID, err := config.ResolveFormID(args)
+	if err != nil {
+		return err
+	}
+	interval, _ := cmd.Flags().GetDuration("interval")
+	noCheckpoint, _ := cmd.Flags().GetBool("no-checkpoint")
+	client, err := newClient()
+	if err != nil {
+		return err
+	}
+	return watchSubmissions(client, formID, interval, !noCheckpoint)
 }
 
 func watchSubmissions(client *api.Client, formID string, interval time.Duration, useCheckpoint bool) error {

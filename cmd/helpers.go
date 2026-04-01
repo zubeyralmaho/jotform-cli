@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"bufio"
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/jotform/jotform-cli/internal/api"
 	"github.com/jotform/jotform-cli/internal/auth"
@@ -37,4 +40,14 @@ func getAnthropicKey() string {
 		return key
 	}
 	return os.Getenv("ANTHROPIC_API_KEY")
+}
+
+// confirmPrompt asks the user a yes/no question via stdin.
+// Returns true only if the user types "y" or "yes".
+func confirmPrompt(msg string) bool {
+	fmt.Fprintf(os.Stderr, "%s [y/N]: ", msg)
+	reader := bufio.NewReader(os.Stdin)
+	answer, _ := reader.ReadString('\n')
+	answer = strings.TrimSpace(strings.ToLower(answer))
+	return answer == "y" || answer == "yes"
 }
