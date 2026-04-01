@@ -27,7 +27,7 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig, initAPIKeyCache)
+	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default: ~/.config/jotform/config.yaml)")
 	rootCmd.PersistentFlags().String("api-key", "", "Jotform API key (overrides keychain)")
@@ -39,16 +39,6 @@ func init() {
 
 	// Apply branded help to root command
 	ui.SetCustomHelp(rootCmd)
-}
-
-// initAPIKeyCache pre-loads the API key into cache at app startup to avoid
-// repeated keychain prompts during command execution
-func initAPIKeyCache() {
-	// Only attempt to load if not already provided via flag or env
-	if viper.GetString("api_key") == "" {
-		// Ignore errors - API key might not be in keychain yet on first login
-		resolveAPIKey()
-	}
 }
 
 func initConfig() {
