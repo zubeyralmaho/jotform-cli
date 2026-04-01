@@ -1,3 +1,7 @@
+<p align="center">
+	<img src="assets/jotform-logo.png" alt="Jotform CLI logo" width="760" />
+</p>
+
 # Jotform CLI: The AI-Native Data Collection Layer
 
 ## 1. Executive Summary
