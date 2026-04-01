@@ -19,7 +19,7 @@ func NewGenerator(apiKey string) *Generator {
 	client := anthropic.NewClient(option.WithAPIKey(apiKey))
 	return &Generator{
 		client: &client,
-		model:  anthropic.ModelClaude4Sonnet20250514,
+		model:  anthropic.ModelClaudeSonnet4_5,
 	}
 }
 
