@@ -1,6 +1,6 @@
 module github.com/zubeyralmaho/jotform-cli
 
-go 1.26.1
+go 1.24.7
 
 require (
 	github.com/99designs/keyring v1.2.2
