@@ -297,20 +297,6 @@ func flattenFormSchema(schema map[string]interface{}) url.Values {
 		values.Set("properties[title]", fmt.Sprint(title))
 	}
 
-	if rawQuestions, ok := schema["questions"]; ok {
-		if questions, ok := rawQuestions.(map[string]interface{}); ok {
-			for order, qRaw := range questions {
-				q, ok := qRaw.(map[string]interface{})
-				if !ok {
-					continue
-				}
-				for k, v := range q {
-					values.Set("questions["+order+"]["+k+"]", fmt.Sprint(v))
-				}
-			}
-		}
-	}
-
 	return values
 }
 

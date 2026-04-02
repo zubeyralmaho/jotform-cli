@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/spinner"
@@ -440,8 +442,21 @@ func (m dashboardModel) renderQuestions(width int) string {
 	sb.WriteString(ui.Subtitle.Render("Questions") + "\n")
 	sb.WriteString(ui.Separator(width) + "\n")
 
+	keys := make([]string, 0, len(questions))
+	for k := range questions {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		ii, errI := strconv.Atoi(keys[i])
+		jj, errJ := strconv.Atoi(keys[j])
+		if errI == nil && errJ == nil {
+			return ii < jj
+		}
+		return keys[i] < keys[j]
+	})
+
 	count := 0
-	for _, q := range questions {
+	for _, k := range keys {
 		if count >= 12 {
 			remaining := questionCount - 12
 			if remaining > 0 {
@@ -449,6 +464,7 @@ func (m dashboardModel) renderQuestions(width int) string {
 			}
 			break
 		}
+		q := questions[k]
 		if qMap, ok := q.(map[string]interface{}); ok {
 			qType := fmt.Sprintf("%v", qMap["type"])
 			qText := fmt.Sprintf("%v", qMap["text"])
