@@ -357,7 +357,7 @@ func ruleFieldOrdering() Rule {
 		Description: "Field order keys should be sequential",
 		Check: func(schema map[string]interface{}) []RuleFinding {
 			questions := getQuestions(schema)
-			if questions == nil || len(questions) == 0 {
+			if len(questions) == 0 {
 				return nil
 			}
 			// Check for gaps in ordering (informational only)

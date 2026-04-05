@@ -54,7 +54,7 @@ func runDev(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create file watcher: %w", err)
 	}
-	defer watcher.Close()
+	defer func() { _ = watcher.Close() }()
 
 	// Watch the directory (more reliable for editors that do atomic writes)
 	dir := filepath.Dir(absPath)
